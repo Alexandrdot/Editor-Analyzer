@@ -17,7 +17,7 @@
    <bool>true</bool>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout_4">
     <item>
      <widget class="QFrame" name="frame">
       <property name="styleSheet">
@@ -37,72 +37,119 @@ border:none;
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Текстовой редактор:</string>
+        <widget class="QSplitter" name="splitter">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <property name="spacing">
-          <number>-1</number>
-         </property>
-         <item>
-          <widget class="QTabWidget" name="tabWidgetEditor">
-           <property name="currentIndex">
-            <number>-1</number>
+         <widget class="QFrame" name="frame_3">
+          <property name="styleSheet">
+           <string notr="true">QFrame{
+border:none;
+}</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Shape::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Shadow::Raised</enum>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <property name="topMargin">
+            <number>0</number>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Результаты:</string>
+           <property name="bottomMargin">
+            <number>0</number>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTabWidget" name="tabWidgetResult">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="currentIndex">
-            <number>-1</number>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_3">
-      <property name="layoutDirection">
-       <enum>Qt::LayoutDirection::RightToLeft</enum>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgba(128, 128, 128, 150); 
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Текстовой редактор:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTabWidget" name="tabWidgetEditor">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>40</height>
+              </size>
+             </property>
+             <property name="currentIndex">
+              <number>-1</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+          <zorder>label_2</zorder>
+          <zorder>tabWidgetEditor</zorder>
+         </widget>
+         <widget class="QFrame" name="frame_2">
+          <property name="styleSheet">
+           <string notr="true">QFrame{
+border:none;
+}</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Shape::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Shadow::Raised</enum>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Результаты:</string>
+             </property>
+             <property name="margin">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTabWidget" name="tabWidgetResult">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="currentIndex">
+              <number>-1</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_3">
+             <property name="layoutDirection">
+              <enum>Qt::LayoutDirection::RightToLeft</enum>
+             </property>
+             <property name="autoFillBackground">
+              <bool>false</bool>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">color: rgba(128, 128, 128, 150); 
 font-size: 9px; 
 font-style: italic; 
 margin: 5px;</string>
-      </property>
-      <property name="text">
-       <string>(beta release)    Developed by AlexandrDot   </string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-      </property>
-      <property name="margin">
-       <number>-5</number>
-      </property>
-      <property name="indent">
-       <number>-1</number>
-      </property>
+             </property>
+             <property name="text">
+              <string>(beta release)    Developed by AlexandrDot   </string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+             <property name="margin">
+              <number>-5</number>
+             </property>
+             <property name="indent">
+              <number>-1</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
    </layout>
@@ -495,6 +542,9 @@ QToolBar:vertical QToolButton {
    <property name="text">
     <string>Сохранить как</string>
    </property>
+   <property name="shortcut">
+    <string>Meta+Shift+S</string>
+   </property>
   </action>
   <action name="exit">
    <property name="icon">
@@ -502,6 +552,9 @@ QToolBar:vertical QToolButton {
    </property>
    <property name="text">
     <string>Выход</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+Q</string>
    </property>
   </action>
   <action name="back">
@@ -533,6 +586,9 @@ QToolBar:vertical QToolButton {
    <property name="text">
     <string>Вырезать</string>
    </property>
+   <property name="shortcut">
+    <string>Meta+X</string>
+   </property>
   </action>
   <action name="copy">
    <property name="icon">
@@ -540,6 +596,9 @@ QToolBar:vertical QToolButton {
    </property>
    <property name="text">
     <string>Копировать</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+C</string>
    </property>
   </action>
   <action name="paste">
@@ -549,6 +608,9 @@ QToolBar:vertical QToolButton {
    <property name="text">
     <string>Вставить</string>
    </property>
+   <property name="shortcut">
+    <string>Meta+V</string>
+   </property>
   </action>
   <action name="deleteFile">
    <property name="icon">
@@ -557,6 +619,9 @@ QToolBar:vertical QToolButton {
    <property name="text">
     <string>Удалить</string>
    </property>
+   <property name="shortcut">
+    <string>Backspace</string>
+   </property>
   </action>
   <action name="selectAll">
    <property name="icon">
@@ -564,6 +629,9 @@ QToolBar:vertical QToolButton {
    </property>
    <property name="text">
     <string>Выделить всё</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+A</string>
    </property>
   </action>
   <action name="action_13">

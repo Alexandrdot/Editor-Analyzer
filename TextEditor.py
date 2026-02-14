@@ -206,7 +206,7 @@ class TextEditor(QMainWindow):
             try:
                 with open(file_path, 'w', encoding='utf-8') as file:
                     file.write(text_edit.toPlainText())
-
+                text_edit.document().setModified(False)
                 self.statusBar().showMessage(
                     f"Файл{os.path.basename(file_path)} сохранен", 2000)
 
@@ -234,7 +234,7 @@ class TextEditor(QMainWindow):
                     file.write(text_edit.toPlainText())
 
                     self.file_paths[id(text_edit)] = file_path
-
+                    text_edit.document().setModified(False)
                     index = self.tabWidgetEditor.currentIndex()
                     file_name = os.path.basename(file_path)
                     self.tabWidgetEditor.setTabText(index, file_name)
@@ -348,3 +348,11 @@ class TextEditor(QMainWindow):
         msg_box.setIcon(QMessageBox.Icon.Information)
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg_box.exec()
+
+    def closeEvent(self, event):
+        result = self.close_program()
+
+        if result is False:
+            event.ignore()
+        else:
+            event.accept()
