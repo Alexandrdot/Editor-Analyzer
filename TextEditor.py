@@ -39,7 +39,7 @@ class TextEditor(QMainWindow):
 
         self.exitFile = self.findChild(QAction, 'exit')
         if self.exitFile:
-            self.exitFile.triggered.connect(self.close)
+            self.exitFile.triggered.connect(self.close_program)
 
         # Edit
         self.backModified = self.findChild(QAction, 'back')
@@ -78,6 +78,56 @@ class TextEditor(QMainWindow):
         self.infoDoc = self.findChild(QAction, 'info')
         if self.infoDoc:
             self.infoDoc.triggered.connect(self.info_doc)
+
+    def close_program(self):
+        # Проверяем все открытые вкладки
+        unsaved_tabs = []
+        for i in range(self.tabWidgetEditor.count()):
+            widget = self.tabWidgetEditor.widget(i)
+            if widget.document().isModified():
+                unsaved_tabs.append(i)
+
+        if unsaved_tabs:
+            reply = QMessageBox.question(
+                self,
+                "Несохраненные изменения",
+                f"Есть несохраненные изменения в {len(unsaved_tabs)} файле(ах).\n"
+                "Сохранить все перед выходом?",
+                QMessageBox.StandardButton.Yes |
+                QMessageBox.StandardButton.No |
+                QMessageBox.StandardButton.Cancel
+            )
+
+            if reply == QMessageBox.StandardButton.Yes:
+                # Сохраняем все измененные файлы
+                for i in unsaved_tabs:
+                    self.tabWidgetEditor.setCurrentIndex(i)
+                    result = self.save_file()
+                    if result == "cancelled":
+                        cont = QMessageBox.question(
+                            self,
+                            "Сохранение отменено",
+                            "Вы отменили сохранение файла. Продолжить выход без сохранения?",
+                            QMessageBox.StandardButton.Yes |
+                            QMessageBox.StandardButton.No
+                        )
+                        if cont == QMessageBox.StandardButton.No:
+                            return
+
+                    elif result == "error":
+                        cont = QMessageBox.question(
+                            self,
+                            "Ошибка сохранения",
+                            "Не удалось сохранить файл. Продолжить выход?",
+                            QMessageBox.StandardButton.Yes |
+                            QMessageBox.StandardButton.No
+                        )
+                        if cont == QMessageBox.StandardButton.No:
+                            return
+
+            elif reply == QMessageBox.StandardButton.Cancel:
+                return
+        self.close()
 
     def close_tab(self, index):
         widget = self.tabWidgetEditor.widget(index)
