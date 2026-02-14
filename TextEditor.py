@@ -19,6 +19,7 @@ class TextEditor(QMainWindow):
         self.file_paths = {}
 
     def setup_actions(self):
+        # File
         self.openFile = self.findChild(QAction, 'open')
         if self.openFile:
             self.openFile.triggered.connect(self.open_file)
@@ -39,6 +40,35 @@ class TextEditor(QMainWindow):
         if self.exitFile:
             self.exitFile.triggered.connect(self.close)
 
+        # Edit
+        self.backModified = self.findChild(QAction, 'back')
+        if self.backModified:
+            self.backModified.triggered.connect(lambda: self.edit_file('back'))
+
+        self.forwardModified = self.findChild(QAction, 'forward')
+        if self.forwardModified:
+            self.forwardModified.triggered.connect(lambda: self.edit_file('forward'))
+
+        self.cutText = self.findChild(QAction, 'cut')
+        if self.cutText:
+            self.cutText.triggered.connect(lambda: self.edit_file('cut'))
+
+        self.copyText = self.findChild(QAction, 'copy')
+        if self.copyText:
+            self.copyText.triggered.connect(lambda: self.edit_file('copy'))
+
+        self.pasteText = self.findChild(QAction, 'paste')
+        if self.pasteText:
+            self.pasteText.triggered.connect(lambda: self.edit_file('paste'))
+
+        self.deleteText = self.findChild(QAction, 'deleteFile')
+        if self.deleteText:
+            self.deleteText.triggered.connect(lambda: self.edit_file('delete'))
+
+        self.selectAllText = self.findChild(QAction, 'selectAll')
+        if self.selectAllText:
+            self.selectAllText.triggered.connect(lambda: self.edit_file('selectAll'))
+
     def close_tab(self, index):
         widget = self.tabWidgetEditor.widget(index)
 
@@ -54,7 +84,9 @@ class TextEditor(QMainWindow):
 
             if reply == QMessageBox.StandardButton.Save:
                 self.tabWidgetEditor.setCurrentIndex(index)
-                self.save_file()
+                saved = self.save_file()
+                if not saved:
+                    return
             elif reply == QMessageBox.StandardButton.Cancel:
                 return
 
@@ -153,3 +185,53 @@ class TextEditor(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка",
                                      f"Не удалось сохранить файл: {str(e)}")
+
+    def edit_file(self, action):
+        text_edit = self.tabWidgetEditor.currentWidget()
+
+        if not text_edit:
+            return
+
+        if action == 'back':
+            if text_edit.document().isUndoAvailable():
+                text_edit.undo()
+                self.statusBar().showMessage("Отмена действия", 1500)
+            else:
+                self.statusBar().showMessage("Нечего отменять", 1500)
+
+        elif action == 'forward':
+            if text_edit.document().isRedoAvailable():
+                text_edit.redo()
+                self.statusBar().showMessage("Повтор действия", 1500)
+            else:
+                self.statusBar().showMessage("Нечего повторять", 1500)
+
+        elif action == 'cut':
+            if text_edit.textCursor().hasSelection():
+                text_edit.cut()
+                self.statusBar().showMessage("Текст вырезан", 1500)
+            else:
+                self.statusBar().showMessage("Нет выделенного текста", 1500)
+
+        elif action == 'copy':
+            if text_edit.textCursor().hasSelection():
+                text_edit.copy()
+                self.statusBar().showMessage("Текст скопирован", 1500)
+            else:
+                self.statusBar().showMessage("Нет выделенного текста", 1500)
+
+        elif action == 'paste':
+            text_edit.paste()
+            self.statusBar().showMessage("Текст вставлен", 1500)
+
+        elif action == 'delete':
+            if text_edit.textCursor().hasSelection():
+                cursor = text_edit.textCursor()
+                cursor.removeSelectedText()
+                self.statusBar().showMessage("Текст удален", 1500)
+            else:
+                self.statusBar().showMessage("Нет выделенного текста", 1500)
+
+        elif action == 'selectAll':
+            text_edit.selectAll()
+            self.statusBar().showMessage("Весь текст выделен", 1500)
