@@ -427,6 +427,9 @@ QToolBar:vertical QToolButton {
    <property name="text">
     <string>Создать</string>
    </property>
+   <property name="shortcut">
+    <string>Meta+N</string>
+   </property>
   </action>
   <action name="open">
    <property name="icon">
@@ -435,6 +438,9 @@ QToolBar:vertical QToolButton {
    <property name="text">
     <string>Открыть</string>
    </property>
+   <property name="shortcut">
+    <string>Meta+O</string>
+   </property>
   </action>
   <action name="save">
    <property name="icon">
@@ -442,6 +448,9 @@ QToolBar:vertical QToolButton {
    </property>
    <property name="text">
     <string>Сохранить</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+S</string>
    </property>
   </action>
   <action name="saveAs">
@@ -467,6 +476,9 @@ QToolBar:vertical QToolButton {
    <property name="text">
     <string>Отменить</string>
    </property>
+   <property name="shortcut">
+    <string>Meta+Z</string>
+   </property>
   </action>
   <action name="forward">
    <property name="icon">
@@ -474,6 +486,9 @@ QToolBar:vertical QToolButton {
    </property>
    <property name="text">
     <string>Повторить</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+Y</string>
    </property>
   </action>
   <action name="cut">

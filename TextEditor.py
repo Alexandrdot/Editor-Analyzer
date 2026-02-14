@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import (QMainWindow, QTextEdit,
                              QTabWidget, QFileDialog, QMessageBox,)
+
 from PyQt6.uic import loadUi
 from PyQt6.QtGui import QAction
 import os
@@ -68,6 +69,15 @@ class TextEditor(QMainWindow):
         self.selectAllText = self.findChild(QAction, 'selectAll')
         if self.selectAllText:
             self.selectAllText.triggered.connect(lambda: self.edit_file('selectAll'))
+
+        # Info
+        self.aboutProgram = self.findChild(QAction, 'about')
+        if self.aboutProgram:
+            self.aboutProgram.triggered.connect(self.about_program)
+
+        self.infoDoc = self.findChild(QAction, 'info')
+        if self.infoDoc:
+            self.infoDoc.triggered.connect(self.info_doc)
 
     def close_tab(self, index):
         widget = self.tabWidgetEditor.widget(index)
@@ -187,6 +197,7 @@ class TextEditor(QMainWindow):
                                      f"Не удалось сохранить файл: {str(e)}")
 
     def edit_file(self, action):
+
         text_edit = self.tabWidgetEditor.currentWidget()
 
         if not text_edit:
@@ -235,3 +246,57 @@ class TextEditor(QMainWindow):
         elif action == 'selectAll':
             text_edit.selectAll()
             self.statusBar().showMessage("Весь текст выделен", 1500)
+
+    def about_program(self):
+        """Открыть окно 'О программе'"""
+        about_text = """
+        <h2>Текстовый редактор</h2>
+        <p>Версия 0.1 (Beta Release)</p>
+        <p>Программа для редактирования текстовых файлов</p>
+        <p>© 2026 Все права защищены</p>
+        <p>Разработано с использованием PyQt6</p>
+        """
+
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("О программе")
+        msg_box.setText(about_text)
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.exec()
+
+    def info_doc(self):
+        """Открыть окно 'Руководство пользователя'"""
+        info_text = """
+        <h2>Руководство пользователя</h2>
+
+        <h3>Основные функции:</h3>
+        <ul>
+            <li><b>Файл → Создать</b> - создать новый документ</li>
+            <li><b>Файл → Открыть</b> - открыть существующий файл</li>
+            <li><b>Файл → Сохранить</b> - сохранить текущий файл</li>
+            <li><b>Файл → Сохранить как</b> - сохранить файл под новым именем</li>
+        </ul>
+
+        <h3>Редактирование:</h3>
+        <ul>
+            <li><b>Правка → Отменить/Повторить</b> - отмена/повтор действий</li>
+            <li><b>Правка → Вырезать/Копировать/Вставить</b> - работа с буфером обмена</li>
+            <li><b>Правка → Выделить всё</b> - выделить весь текст</li>
+        </ul>
+
+        <h3>Горячие клавиши:</h3>
+        <ul>
+            <li>Ctrl+N - Новый файл</li>
+            <li>Ctrl+O - Открыть файл</li>
+            <li>Ctrl+S - Сохранить</li>
+            <li>Ctrl+Z - Отменить</li>
+            <li>Ctrl+Y - Повторить</li>
+        </ul>
+        """
+
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Руководство пользователя")
+        msg_box.setText(info_text)
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.exec()
