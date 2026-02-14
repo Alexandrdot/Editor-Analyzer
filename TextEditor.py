@@ -248,7 +248,6 @@ class TextEditor(QMainWindow):
             self.statusBar().showMessage("Весь текст выделен", 1500)
 
     def about_program(self):
-        """Открыть окно 'О программе'"""
         about_text = """
         <h2>Текстовый редактор</h2>
         <p>Версия 0.1 (Beta Release)</p>
@@ -265,7 +264,6 @@ class TextEditor(QMainWindow):
         msg_box.exec()
 
     def info_doc(self):
-        """Открыть окно 'Руководство пользователя'"""
         info_text = """
         <h2>Руководство пользователя</h2>
 
