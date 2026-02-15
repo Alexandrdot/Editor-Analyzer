@@ -91,7 +91,7 @@ Button|	Action|	Description|
 ↩️	|Back	|Cancel action
 ↪️	|Forward	|Repeat action
 
-### Itnerface of the program
+### Interface of the program
 
 | Main window | The "File" menu | The "About" menu |
 |--------------|-------------|---|

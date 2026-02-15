@@ -1,4 +1,5 @@
-from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QFileDialog, QMessageBox)
+from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QMenuBar, QFileDialog,
+                             QMessageBox, QLabel)
 from PyQt6.Qsci import (QsciScintilla, QsciLexerPython, QsciLexerCPP,
                         QsciLexerJava, QsciLexerHTML, QsciLexerJavaScript)
 from PyQt6.QtGui import QAction, QColor
@@ -17,18 +18,6 @@ class SimpleCodeEditor(QsciScintilla):
         self.setMarginsBackgroundColor(QColor("#2d2d2d"))
         self.setWrapMode(QsciScintilla.WrapMode.WrapWord)
         self.set_lexer(language)
-
-        self.modified_flag = False
-        self.textChanged.connect(self.on_text_changed)
-
-    def on_text_changed(self):
-        self.modified_flag = True
-
-    def isModified(self):
-        return self.modified_flag
-
-    def setModified(self, value):
-        self.modified_flag = value
 
     def set_lexer(self, language):
         lexers = {
@@ -79,8 +68,13 @@ class TextEditor(QMainWindow):
         loadUi('design.ui', self)
 
         self.setup_actions()
+        self.current_lang = 'ru'
+        self.set_russian()
 
         self.tabWidgetEditor = self.findChild(QTabWidget, 'tabWidgetEditor')
+        self.menubar = self.findChild(QMenuBar, 'menubar')
+        self.label_texteditor = self.findChild(QLabel, 'label_texteditor')
+        self.label_result = self.findChild(QLabel, 'label_result')
         self.tabWidgetEditor.setTabsClosable(True)
         self.tabWidgetEditor.tabCloseRequested.connect(self.close_tab)
         self.setAcceptDrops(True)
@@ -115,7 +109,8 @@ class TextEditor(QMainWindow):
 
         self.forwardModified = self.findChild(QAction, 'forward')
         if self.forwardModified:
-            self.forwardModified.triggered.connect(lambda: self.edit_file('forward'))
+            self.forwardModified.triggered.connect(lambda:
+                                                   self.edit_file('forward'))
 
         self.cutText = self.findChild(QAction, 'cut')
         if self.cutText:
@@ -135,7 +130,8 @@ class TextEditor(QMainWindow):
 
         self.selectAllText = self.findChild(QAction, 'selectAll')
         if self.selectAllText:
-            self.selectAllText.triggered.connect(lambda: self.edit_file('selectAll'))
+            self.selectAllText.triggered.connect(lambda:
+                                                 self.edit_file('selectAll'))
 
         # Info
         self.aboutProgram = self.findChild(QAction, 'about')
@@ -145,6 +141,10 @@ class TextEditor(QMainWindow):
         self.infoDoc = self.findChild(QAction, 'info')
         if self.infoDoc:
             self.infoDoc.triggered.connect(self.info_doc)
+
+        self.translate = self.findChild(QAction, 'translate')
+        if self.translate:
+            self.translate.triggered.connect(self.translate_text)
 
     def close_program(self):
         # Проверяем все открытые вкладки
@@ -158,7 +158,8 @@ class TextEditor(QMainWindow):
             reply = QMessageBox.question(
                 self,
                 "Несохраненные изменения",
-                f"Есть несохраненные изменения в {len(unsaved_tabs)} файле(ах).\n"
+                f"Есть несохраненные изменения в {len(
+                    unsaved_tabs)} файле(ах).\n"
                 "Сохранить все перед выходом?",
                 QMessageBox.StandardButton.Yes |
                 QMessageBox.StandardButton.No |
@@ -174,7 +175,7 @@ class TextEditor(QMainWindow):
                         cont = QMessageBox.question(
                             self,
                             "Сохранение отменено",
-                            "Вы отменили сохранение файла. Продолжить выход без сохранения?",
+                            "Вы отменили сохранение. Продолжить выход?",
                             QMessageBox.StandardButton.Yes |
                             QMessageBox.StandardButton.No
                         )
@@ -224,7 +225,7 @@ class TextEditor(QMainWindow):
         widget.deleteLater()
 
     def open_file(self):
-        file_path, selected_filter = QFileDialog.getOpenFileName(
+        file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Выберите файл для открытия",
             "",
@@ -257,6 +258,7 @@ class TextEditor(QMainWindow):
 
         if file_path:
             self.file_paths[id(text_edit)] = file_path
+            text_edit.setModified(False)
 
         self.tabWidgetEditor.setCurrentIndex(index)
 
@@ -267,7 +269,8 @@ class TextEditor(QMainWindow):
 
         language_map = {
             '.py': 'python',
-            '.cpp': 'cpp', '.cxx': 'cpp', '.cc': 'cpp', '.h': 'cpp', '.hpp': 'cpp',
+            '.cpp': 'cpp', '.cxx': 'cpp', '.cc': 'cpp', '.h': 'cpp',
+            '.hpp': 'cpp',
             '.java': 'java',
             '.html': 'html', '.htm': 'html',
             '.js': 'javascript',
@@ -290,11 +293,7 @@ class TextEditor(QMainWindow):
         if file_path:
             try:
                 with open(file_path, 'w', encoding='utf-8') as file:
-                    # Для QScintilla используем text(), для QTextEdit toPlainText()
-                    if hasattr(text_edit, 'text'):
-                        file.write(text_edit.text())
-                    else:
-                        file.write(text_edit.toPlainText())
+                    file.write(text_edit.text())
 
                 text_edit.setModified(False)
                 self.statusBar().showMessage(
@@ -321,11 +320,7 @@ class TextEditor(QMainWindow):
         if file_path:
             try:
                 with open(file_path, 'w', encoding='utf-8') as file:
-                    if hasattr(text_edit, 'text'):
-                        file.write(text_edit.text())
-                    else:
-                        file.write(text_edit.toPlainText())
-
+                    file.write(text_edit.text())
                     self.file_paths[id(text_edit)] = file_path
                     text_edit.setModified(False)
                     index = self.tabWidgetEditor.currentIndex()
@@ -389,53 +384,29 @@ class TextEditor(QMainWindow):
             self.statusBar().showMessage("Весь текст выделен", 1500)
 
     def about_program(self):
-        about_text = """
-        <h2>Текстовый редактор</h2>
-        <p>Версия 0.1 (Beta Release)</p>
-        <p>Программа для редактирования текстовых файлов</p>
-        <p>© 2026 Все права защищены</p>
-        <p>Разработано с использованием PyQt6</p>
-        """
-
         msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("О программе")
-        msg_box.setText(about_text)
+        if self.current_lang == 'en':
+            msg_box.setWindowTitle("About")
+            text = getattr(self, 'about_text', self.about_text)
+        else:
+            msg_box.setWindowTitle("О программе")
+            text = getattr(self, 'about_text', self.about_text)
+
+        msg_box.setText(text)
         msg_box.setIcon(QMessageBox.Icon.Information)
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg_box.exec()
 
     def info_doc(self):
-        info_text = """
-        <h2>Руководство пользователя</h2>
-
-        <h3>Основные функции:</h3>
-        <ul>
-            <li><b>Файл → Создать</b> - создать новый документ</li>
-            <li><b>Файл → Открыть</b> - открыть существующий файл</li>
-            <li><b>Файл → Сохранить</b> - сохранить текущий файл</li>
-            <li><b>Файл → Сохранить как</b> - сохранить файл под новым именем</li>
-        </ul>
-
-        <h3>Редактирование:</h3>
-        <ul>
-            <li><b>Правка → Отменить/Повторить</b> - отмена/повтор действий</li>
-            <li><b>Правка → Вырезать/Копировать/Вставить</b> - работа с буфером обмена</li>
-            <li><b>Правка → Выделить всё</b> - выделить весь текст</li>
-        </ul>
-
-        <h3>Горячие клавиши:</h3>
-        <ul>
-            <li>Ctrl+N - Новый файл</li>
-            <li>Ctrl+O - Открыть файл</li>
-            <li>Ctrl+S - Сохранить</li>
-            <li>Ctrl+Z - Отменить</li>
-            <li>Ctrl+Y - Повторить</li>
-        </ul>
-        """
-
         msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("Руководство пользователя")
-        msg_box.setText(info_text)
+        if self.current_lang == 'en':
+            msg_box.setWindowTitle("User Guide")
+            text = getattr(self, 'info_text', self.info_text)
+        else:
+            msg_box.setWindowTitle("Руководство пользователя")
+            text = getattr(self, 'info_text', self.info_text)
+
+        msg_box.setText(text)
         msg_box.setIcon(QMessageBox.Icon.Information)
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg_box.exec()
@@ -462,6 +433,171 @@ class TextEditor(QMainWindow):
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            self.create_new_tab(os.path.basename(file_path), content, file_path)
+            self.create_new_tab(
+                os.path.basename(file_path), content, file_path)
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", str(e))
+
+    def translate_text(self):
+        if not hasattr(self, 'current_lang'):
+            self.current_lang = 'ru'  # по умолчанию русский
+
+        # Переключаем язык
+        if self.current_lang == 'ru':
+            self.set_english()
+            self.current_lang = 'en'
+            self.statusBar().showMessage("Language switched to English", 3000)
+        else:
+            self.set_russian()
+            self.current_lang = 'ru'
+            self.statusBar().showMessage("Язык переключен на Русский", 3000)
+
+    def set_russian(self):
+        # Меню Файл
+        self.openFile.setText("Открыть")
+        self.createFile.setText("Создать")
+        self.saveFile.setText("Сохранить")
+        self.saveAsFile.setText("Сохранить как...")
+        self.exitFile.setText("Выход")
+
+        # Меню Правка
+        self.backModified.setText("Отменить")
+        self.forwardModified.setText("Повторить")
+        self.cutText.setText("Вырезать")
+        self.copyText.setText("Копировать")
+        self.pasteText.setText("Вставить")
+        self.deleteText.setText("Удалить")
+        self.selectAllText.setText("Выделить всё")
+
+        # Меню Инфо
+        self.aboutProgram.setText("О программе")
+        self.infoDoc.setText("Руководство")
+
+        actions = self.menubar.actions()
+
+        actions[0].setText("Файл")
+        actions[1].setText("Правка")
+        actions[2].setText("Текст")
+        actions[3].setText("Пуск")
+        actions[4].setText("Справка")
+
+        self.label_texteditor.setText("Текстовой редактор:")
+        self.label_result.setText("Результаты:")
+
+        self.update_tab_titles('ru')
+        self.update_dialog_texts('ru')
+
+    def set_english(self):
+        # File menu
+        self.openFile.setText("Open")
+        self.createFile.setText("New")
+        self.saveFile.setText("Save")
+        self.saveAsFile.setText("Save As...")
+        self.exitFile.setText("Exit")
+
+        # Edit menu
+        self.backModified.setText("Undo")
+        self.forwardModified.setText("Redo")
+        self.cutText.setText("Cut")
+        self.copyText.setText("Copy")
+        self.pasteText.setText("Paste")
+        self.deleteText.setText("Delete")
+        self.selectAllText.setText("Select All")
+
+        # Info menu
+        self.aboutProgram.setText("About")
+        self.infoDoc.setText("Help")
+
+        actions = self.menubar.actions()
+
+        actions[0].setText("File")
+        actions[1].setText("Edit")
+        actions[2].setText("Text")
+        actions[3].setText("Play")
+        actions[4].setText("Info")
+
+        self.label_texteditor.setText("Text Editor:")
+        self.label_result.setText("Results:")
+
+        self.update_tab_titles('en')
+        self.update_dialog_texts('en')
+
+    def update_tab_titles(self, lang):
+        for i in range(self.tabWidgetEditor.count()):
+            widget = self.tabWidgetEditor.widget(i)
+            current_text = self.tabWidgetEditor.tabText(i)
+            base_text = current_text.replace("*", "")
+
+            if base_text in ["Новый документ", "New Document"]:
+                new_text = "Новый документ" if lang == 'ru' else "New Document"
+                if widget.isModified():
+                    new_text += "*"
+                self.tabWidgetEditor.setTabText(i, new_text)
+
+    def update_dialog_texts(self, lang):
+        if lang == 'ru':
+            self.about_text = """
+            <h2>Текстовый редактор</h2>
+            <p>Версия 0.1 (Beta Release)</p>
+            <p>Программа для редактирования текстовых файлов</p>
+            <p>© 2026 Все права защищены</p>
+            <p>Разработано с использованием PyQt6</p>
+            """
+
+            self.info_text = """
+            <h2>Руководство пользователя</h2>
+            <h3>Основные функции:</h3>
+            <ul>
+                <li><b>Файл → Создать</b> - создать новый документ</li>
+                <li><b>Файл → Открыть</b> - открыть существующий файл</li>
+                <li><b>Файл → Сохранить</b> - сохранить текущий файл</li>
+                <li><b>Файл → Сохранить как</b> - сохранить файл под новым именем</li>
+            </ul>
+            <h3>Редактирование:</h3>
+            <ul>
+                <li><b>Правка → Отменить/Повторить</b> - отмена/повтор действий</li>
+                <li><b>Правка → Вырезать/Копировать/Вставить</b> - работа с буфером обмена</li>
+                <li><b>Правка → Выделить всё</b> - выделить весь текст</li>
+            </ul>
+            <h3>Горячие клавиши:</h3>
+            <ul>
+                <li>Ctrl+N - Новый файл</li>
+                <li>Ctrl+O - Открыть файл</li>
+                <li>Ctrl+S - Сохранить</li>
+                <li>Ctrl+Z - Отменить</li>
+                <li>Ctrl+Y - Повторить</li>
+            </ul>
+            """
+        else:
+            self.about_text = """
+            <h2>Text Editor</h2>
+            <p>Version 0.1 (Beta Release)</p>
+            <p>Program for editing text files</p>
+            <p>© 2026 All rights reserved</p>
+            <p>Developed with PyQt6</p>
+            """
+
+            self.info_text = """
+            <h2>User Guide</h2>
+            <h3>Main Functions:</h3>
+            <ul>
+                <li><b>File → New</b> - create new document</li>
+                <li><b>File → Open</b> - open existing file</li>
+                <li><b>File → Save</b> - save current file</li>
+                <li><b>File → Save As...</b> - save file with new name</li>
+            </ul>
+            <h3>Editing:</h3>
+            <ul>
+                <li><b>Edit → Undo/Redo</b> - undo/redo actions</li>
+                <li><b>Edit → Cut/Copy/Paste</b> - clipboard operations</li>
+                <li><b>Edit → Select All</b> - select all text</li>
+            </ul>
+            <h3>Hotkeys:</h3>
+            <ul>
+                <li>Ctrl+N - New file</li>
+                <li>Ctrl+O - Open file</li>
+                <li>Ctrl+S - Save</li>
+                <li>Ctrl+Z - Undo</li>
+                <li>Ctrl+Y - Redo</li>
+            </ul>
+            """

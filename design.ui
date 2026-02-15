@@ -61,7 +61,7 @@ border:none;
             <number>0</number>
            </property>
            <item>
-            <widget class="QLabel" name="label_2">
+            <widget class="QLabel" name="label_texteditor">
              <property name="text">
               <string>Текстовой редактор:</string>
              </property>
@@ -81,7 +81,7 @@ border:none;
             </widget>
            </item>
           </layout>
-          <zorder>label_2</zorder>
+          <zorder>label_texteditor</zorder>
           <zorder>tabWidgetEditor</zorder>
          </widget>
          <widget class="QFrame" name="frame_2">
@@ -98,7 +98,7 @@ border:none;
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
-            <widget class="QLabel" name="label_4">
+            <widget class="QLabel" name="label_result">
              <property name="text">
               <string>Результаты:</string>
              </property>
@@ -501,6 +501,8 @@ QToolBar:vertical QToolButton {
    <addaction name="separator"/>
    <addaction name="about"/>
    <addaction name="info"/>
+   <addaction name="separator"/>
+   <addaction name="translate"/>
   </widget>
   <action name="create">
    <property name="icon">
@@ -705,6 +707,17 @@ QToolBar:vertical QToolButton {
   <action name="action_23">
    <property name="text">
     <string>Исходный код программы</string>
+   </property>
+  </action>
+  <action name="translate">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ToolsCheckSpelling"/>
+   </property>
+   <property name="text">
+    <string>Смена языка</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>
