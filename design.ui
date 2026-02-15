@@ -227,7 +227,7 @@ QMenu::item {
     background-color: transparent;
     padding: 8px 24px 8px 16px;
     margin: 2px 6px;
-    border-radius: 12px;
+    border-radius: 8px;
     color: #e0e0e0;
 }
 
@@ -235,7 +235,7 @@ QMenu::item {
 QMenu::item:selected {
     background-color: #0066CC;
     color: white;
-    border-radius: 12px;
+    border-radius: 8px;
 }
 
 /* Стиль для недоступных пунктов */
