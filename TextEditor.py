@@ -12,11 +12,10 @@ class SimpleCodeEditor(QsciScintilla):
 
         # Нумерация строк
         self.setMarginType(0, QsciScintilla.MarginType.NumberMargin)
-        self.setMarginWidth(0, "00")
+        self.setMarginWidth(0, "000")
         self.setMarginsForegroundColor(QColor("#e0e0e0"))
         self.setMarginsBackgroundColor(QColor("#2d2d2d"))
         self.setWrapMode(QsciScintilla.WrapMode.WrapWord)
-
         self.set_lexer(language)
 
         self.modified_flag = False
@@ -63,6 +62,16 @@ class SimpleCodeEditor(QsciScintilla):
 
             self.setLexer(lexer)
 
+    def wheelEvent(self, event):
+        if event.modifiers():
+            if event.angleDelta().y() > 0:
+                self.zoomIn(1)
+            else:
+                self.zoomOut(1)
+            self.setMarginsFont(self.font())
+        else:
+            super().wheelEvent(event)
+
 
 class TextEditor(QMainWindow):
     def __init__(self):
@@ -74,7 +83,7 @@ class TextEditor(QMainWindow):
         self.tabWidgetEditor = self.findChild(QTabWidget, 'tabWidgetEditor')
         self.tabWidgetEditor.setTabsClosable(True)
         self.tabWidgetEditor.tabCloseRequested.connect(self.close_tab)
-
+        self.setAcceptDrops(True)
         self.file_paths = {}
 
     def setup_actions(self):
@@ -438,3 +447,21 @@ class TextEditor(QMainWindow):
             event.ignore()
         else:
             event.accept()
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        for url in event.mimeData().urls():
+            file_path = url.toLocalFile()
+            if file_path and os.path.isfile(file_path):
+                self.open_file_path(file_path)
+
+    def open_file_path(self, file_path):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.create_new_tab(os.path.basename(file_path), content, file_path)
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", str(e))
