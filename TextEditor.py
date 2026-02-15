@@ -5,6 +5,16 @@ from PyQt6.Qsci import (QsciScintilla, QsciLexerPython, QsciLexerCPP,
 from PyQt6.QtGui import QAction, QColor
 from PyQt6.uic import loadUi
 import os
+import sys
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    
+    return os.path.join(base_path, relative_path)
 
 
 class SimpleCodeEditor(QsciScintilla):
@@ -65,7 +75,8 @@ class SimpleCodeEditor(QsciScintilla):
 class TextEditor(QMainWindow):
     def __init__(self):
         super().__init__()
-        loadUi('design.ui', self)
+        ui_path = resource_path('design.ui')
+        loadUi(ui_path, self)
 
         self.setup_actions()
         self.current_lang = 'ru'
