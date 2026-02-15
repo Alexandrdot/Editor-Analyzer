@@ -1,9 +1,50 @@
-from PyQt6.QtWidgets import (QMainWindow, QTextEdit,
-                             QTabWidget, QFileDialog, QMessageBox,)
-
+from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QFileDialog, QMessageBox)
+from PyQt6.Qsci import (QsciScintilla, QsciLexerPython, QsciLexerCPP,
+                        QsciLexerJava, QsciLexerHTML, QsciLexerJavaScript)
+from PyQt6.QtGui import QAction, QColor
 from PyQt6.uic import loadUi
-from PyQt6.QtGui import QAction
 import os
+
+
+class SimpleCodeEditor(QsciScintilla):
+    def __init__(self, language="python"):
+        super().__init__()
+
+        # Нумерация строк
+        self.setMarginType(0, QsciScintilla.MarginType.NumberMargin)
+        self.setMarginWidth(0, "00")
+        self.setMarginsForegroundColor(QColor("#e0e0e0"))
+        self.setMarginsBackgroundColor(QColor("#2d2d2d"))
+        self.setWrapMode(QsciScintilla.WrapMode.WrapWord)
+
+        self.set_lexer(language)
+
+        self.modified_flag = False
+        self.textChanged.connect(self.on_text_changed)
+
+    def on_text_changed(self):
+        self.modified_flag = True
+
+    def isModified(self):
+        return self.modified_flag
+
+    def setModified(self, value):
+        self.modified_flag = value
+
+    def set_lexer(self, language):
+        lexers = {
+            "python": QsciLexerPython,
+            "cpp": QsciLexerCPP,
+            "java": QsciLexerJava,
+            "html": QsciLexerHTML,
+            "javascript": QsciLexerJavaScript,
+        }
+
+        if language in lexers:
+            lexer = lexers[language]()
+            lexer.setDefaultPaper(QColor("#1e1e1e"))
+            lexer.setPaper(QColor("#1e1e1e"))
+            self.setLexer(lexer)
 
 
 class TextEditor(QMainWindow):
@@ -84,7 +125,7 @@ class TextEditor(QMainWindow):
         unsaved_tabs = []
         for i in range(self.tabWidgetEditor.count()):
             widget = self.tabWidgetEditor.widget(i)
-            if widget.document().isModified():
+            if widget.isModified():
                 unsaved_tabs.append(i)
 
         if unsaved_tabs:
@@ -132,7 +173,7 @@ class TextEditor(QMainWindow):
     def close_tab(self, index):
         widget = self.tabWidgetEditor.widget(index)
 
-        if widget.document().isModified():
+        if widget.isModified():
             reply = QMessageBox.question(
                 self,
                 "Несохраненные изменения",
@@ -178,8 +219,13 @@ class TextEditor(QMainWindow):
 
     def create_new_tab(self, title="Новый документ", content="",
                        file_path=None):
-        text_edit = QTextEdit()
-        text_edit.setPlainText(content)
+        language = "python"  # по умолчанию
+        if file_path:
+            lang = self.get_language_from_filename(file_path)
+            if lang:
+                language = lang
+        text_edit = SimpleCodeEditor(language)
+        text_edit.setText(content)
 
         index = self.tabWidgetEditor.addTab(text_edit, title)
 
@@ -189,6 +235,19 @@ class TextEditor(QMainWindow):
         self.tabWidgetEditor.setCurrentIndex(index)
 
         return text_edit
+
+    def get_language_from_filename(self, filename):
+        ext = os.path.splitext(filename)[1].lower()
+
+        language_map = {
+            '.py': 'python',
+            '.cpp': 'cpp', '.cxx': 'cpp', '.cc': 'cpp', '.h': 'cpp', '.hpp': 'cpp',
+            '.java': 'java',
+            '.html': 'html', '.htm': 'html',
+            '.js': 'javascript',
+            '.txt': None,
+        }
+        return language_map.get(ext, None)
 
     def new_file(self):
         self.create_new_tab()
@@ -205,8 +264,13 @@ class TextEditor(QMainWindow):
         if file_path:
             try:
                 with open(file_path, 'w', encoding='utf-8') as file:
-                    file.write(text_edit.toPlainText())
-                text_edit.document().setModified(False)
+                    # Для QScintilla используем text(), для QTextEdit toPlainText()
+                    if hasattr(text_edit, 'text'):
+                        file.write(text_edit.text())
+                    else:
+                        file.write(text_edit.toPlainText())
+
+                text_edit.setModified(False)
                 self.statusBar().showMessage(
                     f"Файл{os.path.basename(file_path)} сохранен", 2000)
 
@@ -231,10 +295,13 @@ class TextEditor(QMainWindow):
         if file_path:
             try:
                 with open(file_path, 'w', encoding='utf-8') as file:
-                    file.write(text_edit.toPlainText())
+                    if hasattr(text_edit, 'text'):
+                        file.write(text_edit.text())
+                    else:
+                        file.write(text_edit.toPlainText())
 
                     self.file_paths[id(text_edit)] = file_path
-                    text_edit.document().setModified(False)
+                    text_edit.setModified(False)
                     index = self.tabWidgetEditor.currentIndex()
                     file_name = os.path.basename(file_path)
                     self.tabWidgetEditor.setTabText(index, file_name)
@@ -247,35 +314,34 @@ class TextEditor(QMainWindow):
                                      f"Не удалось сохранить файл: {str(e)}")
 
     def edit_file(self, action):
-
         text_edit = self.tabWidgetEditor.currentWidget()
 
         if not text_edit:
             return
 
         if action == 'back':
-            if text_edit.document().isUndoAvailable():
+            if text_edit.isUndoAvailable():
                 text_edit.undo()
                 self.statusBar().showMessage("Отмена действия", 1500)
             else:
                 self.statusBar().showMessage("Нечего отменять", 1500)
 
         elif action == 'forward':
-            if text_edit.document().isRedoAvailable():
+            if text_edit.isRedoAvailable():
                 text_edit.redo()
                 self.statusBar().showMessage("Повтор действия", 1500)
             else:
                 self.statusBar().showMessage("Нечего повторять", 1500)
 
         elif action == 'cut':
-            if text_edit.textCursor().hasSelection():
+            if text_edit.hasSelectedText():
                 text_edit.cut()
                 self.statusBar().showMessage("Текст вырезан", 1500)
             else:
                 self.statusBar().showMessage("Нет выделенного текста", 1500)
 
         elif action == 'copy':
-            if text_edit.textCursor().hasSelection():
+            if text_edit.hasSelectedText():
                 text_edit.copy()
                 self.statusBar().showMessage("Текст скопирован", 1500)
             else:
@@ -286,9 +352,8 @@ class TextEditor(QMainWindow):
             self.statusBar().showMessage("Текст вставлен", 1500)
 
         elif action == 'delete':
-            if text_edit.textCursor().hasSelection():
-                cursor = text_edit.textCursor()
-                cursor.removeSelectedText()
+            if text_edit.hasSelectedText():
+                text_edit.removeSelectedText()
                 self.statusBar().showMessage("Текст удален", 1500)
             else:
                 self.statusBar().showMessage("Нет выделенного текста", 1500)
