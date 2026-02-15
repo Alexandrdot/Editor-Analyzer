@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>mainWindow</class>
+ <widget class="QMainWindow" name="mainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>TextEditor (beta release)</string>
   </property>
   <property name="animated">
    <bool>true</bool>
@@ -61,7 +61,7 @@ border:none;
             <number>0</number>
            </property>
            <item>
-            <widget class="QLabel" name="label_2">
+            <widget class="QLabel" name="label_texteditor">
              <property name="text">
               <string>Текстовой редактор:</string>
              </property>
@@ -81,7 +81,7 @@ border:none;
             </widget>
            </item>
           </layout>
-          <zorder>label_2</zorder>
+          <zorder>label_texteditor</zorder>
           <zorder>tabWidgetEditor</zorder>
          </widget>
          <widget class="QFrame" name="frame_2">
@@ -98,7 +98,7 @@ border:none;
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
-            <widget class="QLabel" name="label_4">
+            <widget class="QLabel" name="label_result">
              <property name="text">
               <string>Результаты:</string>
              </property>
@@ -227,7 +227,7 @@ QMenu::item {
     background-color: transparent;
     padding: 8px 24px 8px 16px;
     margin: 2px 6px;
-    border-radius: 12px;
+    border-radius: 8px;
     color: #e0e0e0;
 }
 
@@ -235,7 +235,7 @@ QMenu::item {
 QMenu::item:selected {
     background-color: #0066CC;
     color: white;
-    border-radius: 12px;
+    border-radius: 8px;
 }
 
 /* Стиль для недоступных пунктов */
@@ -501,6 +501,8 @@ QToolBar:vertical QToolButton {
    <addaction name="separator"/>
    <addaction name="about"/>
    <addaction name="info"/>
+   <addaction name="separator"/>
+   <addaction name="translate"/>
   </widget>
   <action name="create">
    <property name="icon">
@@ -705,6 +707,17 @@ QToolBar:vertical QToolButton {
   <action name="action_23">
    <property name="text">
     <string>Исходный код программы</string>
+   </property>
+  </action>
+  <action name="translate">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ToolsCheckSpelling"/>
+   </property>
+   <property name="text">
+    <string>Смена языка</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>
