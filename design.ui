@@ -512,7 +512,7 @@ QToolBar:vertical QToolButton {
     <string>Создать</string>
    </property>
    <property name="shortcut">
-    <string>Meta+N</string>
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="open">
@@ -523,7 +523,7 @@ QToolBar:vertical QToolButton {
     <string>Открыть</string>
    </property>
    <property name="shortcut">
-    <string>Meta+O</string>
+    <string>Ctrl+O</string>
    </property>
   </action>
   <action name="save">
@@ -534,7 +534,7 @@ QToolBar:vertical QToolButton {
     <string>Сохранить</string>
    </property>
    <property name="shortcut">
-    <string>Meta+S</string>
+    <string>Ctrl+S</string>
    </property>
   </action>
   <action name="saveAs">
@@ -545,7 +545,7 @@ QToolBar:vertical QToolButton {
     <string>Сохранить как</string>
    </property>
    <property name="shortcut">
-    <string>Meta+Shift+S</string>
+    <string>Ctrl+Shift+S</string>
    </property>
   </action>
   <action name="exit">
@@ -556,7 +556,7 @@ QToolBar:vertical QToolButton {
     <string>Выход</string>
    </property>
    <property name="shortcut">
-    <string>Meta+Q</string>
+    <string>Ctrl+Q</string>
    </property>
   </action>
   <action name="back">
@@ -567,7 +567,7 @@ QToolBar:vertical QToolButton {
     <string>Отменить</string>
    </property>
    <property name="shortcut">
-    <string>Meta+Z</string>
+    <string>Ctrl+Z</string>
    </property>
   </action>
   <action name="forward">
@@ -578,7 +578,7 @@ QToolBar:vertical QToolButton {
     <string>Повторить</string>
    </property>
    <property name="shortcut">
-    <string>Meta+Y</string>
+    <string>Ctrl+Y</string>
    </property>
   </action>
   <action name="cut">
@@ -589,7 +589,7 @@ QToolBar:vertical QToolButton {
     <string>Вырезать</string>
    </property>
    <property name="shortcut">
-    <string>Meta+X</string>
+    <string>Ctrl+X</string>
    </property>
   </action>
   <action name="copy">
@@ -600,7 +600,7 @@ QToolBar:vertical QToolButton {
     <string>Копировать</string>
    </property>
    <property name="shortcut">
-    <string>Meta+C</string>
+    <string>Ctrl+C</string>
    </property>
   </action>
   <action name="paste">
@@ -611,7 +611,7 @@ QToolBar:vertical QToolButton {
     <string>Вставить</string>
    </property>
    <property name="shortcut">
-    <string>Meta+V</string>
+    <string>Ctrl+V</string>
    </property>
   </action>
   <action name="deleteFile">
@@ -633,7 +633,7 @@ QToolBar:vertical QToolButton {
     <string>Выделить всё</string>
    </property>
    <property name="shortcut">
-    <string>Meta+A</string>
+    <string>Ctrl+A</string>
    </property>
   </action>
   <action name="action_13">
