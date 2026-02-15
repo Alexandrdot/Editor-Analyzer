@@ -44,6 +44,23 @@ class SimpleCodeEditor(QsciScintilla):
             lexer = lexers[language]()
             lexer.setDefaultPaper(QColor("#1e1e1e"))
             lexer.setPaper(QColor("#1e1e1e"))
+            lexer.setDefaultColor(QColor("#d4d4d4"))
+
+            if language == "python":
+                lexer.setColor(QColor("#569CD6"), QsciLexerPython.Keyword)
+                lexer.setColor(QColor("#4EC9B0"), QsciLexerPython.ClassName)
+                lexer.setColor(QColor("#DCDCAA"), QsciLexerPython.FunctionMethodName)
+                lexer.setColor(QColor("#9CDCFE"), QsciLexerPython.Number)
+                lexer.setColor(QColor("#6A9955"), QsciLexerPython.Comment)
+                lexer.setColor(QColor("#D4D4D4"), QsciLexerPython.Operator)
+                lexer.setColor(QColor("#DCDCAA"), QsciLexerPython.Decorator)
+
+            elif language in ["cpp", "java", "javascript"]:
+                lexer.setColor(QColor("#569CD6"), 0)  # Keywords
+                lexer.setColor(QColor("#4EC9B0"), 1)  # Types
+                lexer.setColor(QColor("#CE9178"), 2)  # Strings
+                lexer.setColor(QColor("#6A9955"), 3)  # Comments
+
             self.setLexer(lexer)
 
 
