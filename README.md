@@ -49,6 +49,8 @@ You must have installed [project dependencies](https://github.com/AlexandrDot/Ed
 
 ## User's Guide
 
+### A complete user's guide can be obtained at this link: [The manual is in Russian](./docs/ru/manual.md) | [The manual is in English](./docs/en/manual.md)
+
 ### File
 
 Item | Hotkey |	What does|
