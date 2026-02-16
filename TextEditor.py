@@ -624,7 +624,7 @@ class TextEditor(QMainWindow):
                 <li>Ctrl+Y - Повторить</li>
             </ul>
             <h3>
-                <a href="https://github.com/Alexandrdot/Editor-Analyzer/docs/ru/manual.md">Нажмите, для получения подробного руководства</a>
+                <a href="https://github.com/Alexandrdot/Editor-Analyzer/blob/main/docs/ru/manual.md">Нажмите, для получения подробного руководства</a>
             </h3>
             """
         else:
@@ -660,6 +660,6 @@ class TextEditor(QMainWindow):
                 <li>Ctrl+Y - Redo</li>
             </ul>
             <h3>
-                <a href="https://github.com/Alexandrdot/Editor-Analyzer/docs/en/manual.md">Click here for a detailed guide.</a>
+                <a href="https://github.com/Alexandrdot/Editor-Analyzer/blob/main/docs/en/manual.md">Click here for a detailed guide.</a>
             </h3>
             """
