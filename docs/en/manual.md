@@ -10,7 +10,7 @@
 
 <br>
 <div align="center">
-  <img src="./screenshots/main_menu_en.png" alt="Main window" width="400"/>
+  <img src="../../screenshots/main_menu_en.png" alt="Main window" width="400"/>
 </div>
 
 <br>
@@ -22,7 +22,7 @@
 1. When you click "create", a new text document will appear in the editor, in which you can enter text.
 
 <div align="center">
-  <img src="./screenshots/file_create_en.png" alt="Create file" width="400"/>
+  <img src="../../screenshots/file_create_en.png" alt="Create file" width="400"/>
 </div>
 
 <br>
@@ -35,8 +35,8 @@
 <div align="center">
   <table>
     <tr>
-      <td><img src="./screenshots/map_en.png" alt="Map" width="400"/></td>
-      <td><img src="./screenshots/editor_en.png" alt="Opened file" width="400"/></td>
+      <td><img src="../../screenshots/map_en.png" alt="Map" width="400"/></td>
+      <td><img src="../../screenshots/editor_en.png" alt="Opened file" width="400"/></td>
     </tr>
     <tr>
       <td align="center"><em>Map</em></td>
@@ -57,8 +57,8 @@
 <div align="center">
   <table>
     <tr>
-      <td><img src="./screenshots/save_map_en.png" alt="Where to save" width="400"/></td>
-      <td><img src="./screenshots/save.png" alt="Saved" width="400"/></td>
+      <td><img src="../../screenshots/save_map_en.png" alt="Where to save" width="400"/></td>
+      <td><img src="../../screenshots/save.png" alt="Saved" width="400"/></td>
     </tr>
     <tr>
       <td align="center"><em>Where to save</em></td>
@@ -73,7 +73,7 @@
 5. When you click Exit, a notification will be displayed if there are unsaved files. You can either save or delete them, and then exit the program.
 <br>
 <div align="center">
-  <img src="./screenshots/exit.png" alt="Exit" width="400"/>
+  <img src="../../screenshots/exit.png" alt="Exit" width="400"/>
 </div>
 
 <br>
@@ -89,7 +89,7 @@
 1. Clicking **"undo"** in the active editor file will rollback to the last change.
 
 <div align="center">
-  <img src="./screenshots/undo_en.png" alt="Undo" width="400"/>
+  <img src="../../screenshots/undo_en.png" alt="Undo" width="400"/>
 </div>
 
 <br>
@@ -98,7 +98,7 @@
 2. When you click **"repeat"** in the active editor file, you will return to the last change.
 
 <div align="center">
-  <img src="./screenshots/redo_en.png" alt="redo" width="400"/>
+  <img src="../../screenshots/redo_en.png" alt="redo" width="400"/>
 </div>
 
 <br>
@@ -107,7 +107,7 @@
 3. When you click **"cut"** in the active editor file, the selected text will be cut out.
 
 <div align="center">
-  <img src="./screenshots/cut_en.png" alt="Cut text" width="400"/>
+  <img src="../../screenshots/cut_en.png" alt="Cut text" width="400"/>
 </div>
 
 <br>
@@ -116,7 +116,7 @@
 4. When you click **"copy"** in the active editor file, the selected text will be copied
 
 <div align="center">
-  <img src="./screenshots/copy_en.png" alt="Copy" width="400"/>
+  <img src="../../screenshots/copy_en.png" alt="Copy" width="400"/>
 </div>
 
 <br>
@@ -125,7 +125,7 @@
 5. When you click **"paste"** in the active file editor, text will be inserted from the clipboard.
 
 <div align="center">
-  <img src="./screenshots/paste_en.png" alt="Paste" width="400"/>
+  <img src="../../screenshots/paste_en.png" alt="Paste" width="400"/>
 </div>
 
 <br>
@@ -134,7 +134,7 @@
 6. When you click **"delete"** in the active editor file, the selected text will be deleted.
 
 <div align="center">
-  <img src="./screenshots/delete_en.png" alt="Delete" width="400"/>
+  <img src="../../screenshots/delete_en.png" alt="Delete" width="400"/>
 </div>
 
 <br>
@@ -143,7 +143,7 @@
 7. When you click **"select all"** in the active editor file, the entire text will be highlighted
 
 <div align="center">
-  <img src="./screenshots/select_all_en.png" alt="select all" width="400"/>
+  <img src="../../screenshots/select_all_en.png" alt="select all" width="400"/>
 </div>
 
 ## Working with the "Text" item
@@ -167,7 +167,7 @@
 The Help menu contains information sections that help the user to familiarize themselves with the program and obtain the necessary documentation.
 
 <div align="center">
-  <img src="./screenshots/help_menu_en.png" alt="Help" width="400"/>
+  <img src="../../screenshots/help_menu_en.png" alt="Help" width="400"/>
 </div>
 
 <br>
@@ -178,7 +178,7 @@ The Help menu contains information sections that help the user to familiarize th
 When you select **"about the program"**, a dialog box opens containing information about the application version, release year, author, and technologies used. This window allows you to verify that the version is up to date and get general information about the program.
 
 <div align="center">
-  <img src="./screenshots/about_en.png" alt="about the program" width="400"/>
+  <img src="../../screenshots/about_en.png" alt="about the program" width="400"/>
 </div>
 
 <br>
@@ -189,7 +189,7 @@ When you select **"about the program"**, a dialog box opens containing informati
 When you select **"manual"**, a window opens with a brief guide on how to use the program. The main functions and keyboard shortcuts are presented here. At the bottom of the window there is a link to the full documentation, where you can find more detailed information.
 
 <div align="center">
-  <img src="./screenshots/help_en.png" alt="manual" width="400"/>
+  <img src="../../screenshots/help_en.png" alt="manual" width="400"/>
 </div>
 
 <br>

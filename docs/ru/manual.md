@@ -10,7 +10,7 @@
 
 <br>
 <div align="center">
-  <img src="./screenshots/main_menu.png" alt="Главное окно" width="400"/>
+  <img src="../../screenshots/main_menu.png" alt="Главное окно" width="400"/>
 </div>
 
 <br>
@@ -21,7 +21,7 @@
 1. При нажатии "создать" в редакторе появится новый текстовый документ, в котором можно вводить текст
 
 <div align="center">
-  <img src="./screenshots/file_create.png" alt="Создать Файл" width="400"/>
+  <img src="../../screenshots/file_create.png" alt="Создать Файл" width="400"/>
 </div>
 
 <br>
@@ -34,8 +34,8 @@
 <div align="center">
   <table>
     <tr>
-      <td><img src="./screenshots/map.png" alt="Путь" width="400"/></td>
-      <td><img src="./screenshots/editor.png" alt="Появившийся файл" width="400"/></td>
+      <td><img src="../../screenshots/map.png" alt="Путь" width="400"/></td>
+      <td><img src="../../screenshots/editor.png" alt="Появившийся файл" width="400"/></td>
     </tr>
     <tr>
       <td align="center"><em>Путь</em></td>
@@ -56,8 +56,8 @@
 <div align="center">
   <table>
     <tr>
-      <td><img src="./screenshots/save_map.png" alt="Куда сохранить" width="400"/></td>
-      <td><img src="./screenshots/save.png" alt="Сохранение" width="400"/></td>
+      <td><img src="../../screenshots/save_map.png" alt="Куда сохранить" width="400"/></td>
+      <td><img src="../../screenshots/save.png" alt="Сохранение" width="400"/></td>
     </tr>
     <tr>
       <td align="center"><em>Куда сохранить</em></td>
@@ -72,7 +72,7 @@
 5. При нажатии "выход" отобразится уведомление, если есть несохраненные файлы - их можно либо сохранить, либо удалить, а после произойдет выход из программы
 <br>
 <div align="center">
-  <img src="./screenshots/exit.png" alt="Выход" width="400"/>
+  <img src="../../screenshots/exit.png" alt="Выход" width="400"/>
 </div>
 
 <br>
@@ -88,7 +88,7 @@
 1. При нажатии **"отменить"** в активном файле редакторе произойдет откат к последнему изменению
 
 <div align="center">
-  <img src="./screenshots/undo.png" alt="Отмена действия" width="400"/>
+  <img src="../../screenshots/undo.png" alt="Отмена действия" width="400"/>
 </div>
 
 <br>
@@ -97,7 +97,7 @@
 2. При нажатии **"повторить"** в активном файле редакторе произойдет возврат к последнему изменению
 
 <div align="center">
-  <img src="./screenshots/redo.png" alt="Повтор действия" width="400"/>
+  <img src="../../screenshots/redo.png" alt="Повтор действия" width="400"/>
 </div>
 
 <br>
@@ -106,7 +106,7 @@
 3. При нажатии **"вырезать"** в активном файле редакторе произойдет вырезание выделенного текста
 
 <div align="center">
-  <img src="./screenshots/cut.png" alt="Вырезание текста" width="400"/>
+  <img src="../../screenshots/cut.png" alt="Вырезание текста" width="400"/>
 </div>
 
 <br>
@@ -115,7 +115,7 @@
 4. При нажатии **"копировать"** в активном файле редакторе произойдет копирование выделенного текста
 
 <div align="center">
-  <img src="./screenshots/copy.png" alt="Копирование текста" width="400"/>
+  <img src="../../screenshots/copy.png" alt="Копирование текста" width="400"/>
 </div>
 
 <br>
@@ -124,7 +124,7 @@
 5. При нажатии **"вставить"** в активном файле редакторе произойдет вставка текста из буфера обмена
 
 <div align="center">
-  <img src="./screenshots/paste.png" alt="Вставка текста" width="400"/>
+  <img src="../../screenshots/paste.png" alt="Вставка текста" width="400"/>
 </div>
 
 <br>
@@ -133,7 +133,7 @@
 6. При нажатии **"удалить"** в активном файле редакторе произойдет удаление выделенного текста
 
 <div align="center">
-  <img src="./screenshots/delete.png" alt="Удаление текста" width="400"/>
+  <img src="../../screenshots/delete.png" alt="Удаление текста" width="400"/>
 </div>
 
 <br>
@@ -142,7 +142,7 @@
 7. При нажатии **"выделить всё"** в активном файле редакторе произойдет выделение всего текста
 
 <div align="center">
-  <img src="./screenshots/select_all.png" alt="Выделение всего текста" width="400"/>
+  <img src="../../screenshots/select_all.png" alt="Выделение всего текста" width="400"/>
 </div>
 
 ## Работа с пунктом "Текст"
@@ -166,7 +166,7 @@
 Меню "Справка" содержит информационные разделы, помогающие пользователю ознакомиться с программой и получить необходимую документацию.
 
 <div align="center">
-  <img src="./screenshots/help_menu.png" alt="Меню Справка" width="400"/>
+  <img src="../../screenshots/help_menu.png" alt="Меню Справка" width="400"/>
 </div>
 
 <br>
@@ -177,7 +177,7 @@
 При выборе пункта **"о программе"** открывается диалоговое окно, содержащее информацию о версии приложения, годе выпуска, авторе и используемых технологиях. Это окно позволяет убедиться в актуальности версии и получить общие сведения о программе.
 
 <div align="center">
-  <img src="./screenshots/about.png" alt="О программе" width="500"/>
+  <img src="../../screenshots/about.png" alt="О программе" width="500"/>
 </div>
 
 <br>
@@ -188,7 +188,7 @@
 При выборе пункта **"руководство"** открывается окно с кратким руководством по использованию программы. Здесь представлены основные функции и горячие клавиши. В нижней части окна расположена ссылка на полную документацию, где можно найти более подробную информацию.
 
 <div align="center">
-  <img src="./screenshots/help.png" alt="Руководство пользователя" width="500"/>
+  <img src="../../screenshots/help.png" alt="Руководство пользователя" width="500"/>
 </div>
 
 <br>
