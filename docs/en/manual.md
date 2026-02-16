@@ -165,12 +165,6 @@
 <br>
 
 The Help menu contains information sections that help the user to familiarize themselves with the program and obtain the necessary documentation.
-
-<div align="center">
-  <img src="../../screenshots/help_menu_en.png" alt="Help" width="400"/>
-</div>
-
-<br>
 <br>
 
 ### 1. About
