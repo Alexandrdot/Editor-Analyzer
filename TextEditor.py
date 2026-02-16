@@ -2,7 +2,8 @@ from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QMenuBar, QFileDialog,
                              QMessageBox, QLabel)
 from PyQt6.Qsci import (QsciScintilla, QsciLexerPython, QsciLexerCPP,
                         QsciLexerJava, QsciLexerHTML, QsciLexerJavaScript)
-from PyQt6.QtGui import QAction, QColor
+from PyQt6.QtGui import QAction, QColor, QDesktopServices
+from PyQt6.QtCore import QUrl
 from PyQt6.uic import loadUi
 import os
 import sys
@@ -13,7 +14,7 @@ def resource_path(relative_path):
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.dirname(os.path.abspath(__file__))
-    
+
     return os.path.join(base_path, relative_path)
 
 
@@ -78,6 +79,48 @@ class TextEditor(QMainWindow):
         ui_path = resource_path('design.ui')
         loadUi(ui_path, self)
 
+        # Словарь с переводами для статусбара
+        self.status_msgs = {
+            'ru': {
+                'opened': "Файл {} успешно открыт",
+                'created': "Новый документ создан",
+                'saved': "Файл {} сохранен",
+                'saved_as': "Файл сохранен как {}",
+                'undo': "Отмена действия",
+                'undo_unavail': "Нечего отменять",
+                'redo': "Повтор действия",
+                'redo_unavail': "Нечего повторять",
+                'cut': "Текст вырезан",
+                'cut_unavail': "Нет выделенного текста",
+                'copy': "Текст скопирован",
+                'copy_unavail': "Нет выделенного текста",
+                'paste': "Текст вставлен",
+                'delete': "Текст удален",
+                'delete_unavail': "Нет выделенного текста",
+                'select_all': "Весь текст выделен",
+                'lang_switched': "Язык переключен на Русский",
+            },
+            'en': {
+                'opened': "File {} successfully opened",
+                'created': "New document created",
+                'saved': "File {} saved",
+                'saved_as': "File saved as {}",
+                'undo': "Undo action",
+                'undo_unavail': "Nothing to undo",
+                'redo': "Redo action",
+                'redo_unavail': "Nothing to redo",
+                'cut': "Text cut",
+                'cut_unavail': "No text selected",
+                'copy': "Text copied",
+                'copy_unavail': "No text selected",
+                'paste': "Text pasted",
+                'delete': "Text deleted",
+                'delete_unavail': "No text selected",
+                'select_all': "All text selected",
+                'lang_switched': "Language switched to English",
+            }
+        }
+
         self.setup_actions()
         self.current_lang = 'ru'
         self.set_russian()
@@ -90,6 +133,16 @@ class TextEditor(QMainWindow):
         self.tabWidgetEditor.tabCloseRequested.connect(self.close_tab)
         self.setAcceptDrops(True)
         self.file_paths = {}
+
+        self.label_texteditor.linkActivated.connect(self.open_link)
+        self.label_result.linkActivated.connect(self.open_link)
+
+    def tr(self, key, *args):
+        msg = self.status_msgs[self.current_lang].get(key, key)
+        return msg.format(*args) if args else msg
+
+    def open_link(self, url):
+        QDesktopServices.openUrl(QUrl(url))
 
     def setup_actions(self):
         # File
@@ -249,8 +302,7 @@ class TextEditor(QMainWindow):
                     content = file.read()
                 file_name = os.path.basename(file_path)
                 self.create_new_tab(file_name, content, file_path)
-                self.statusBar().showMessage(
-                    f"Файл {file_name} успешно открыт", 3000)
+                self.statusBar().showMessage(self.tr('opened', file_name), 3000)
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка",
                                      f"Не удалось открыть файл:\n{str(e)}")
@@ -291,7 +343,7 @@ class TextEditor(QMainWindow):
 
     def new_file(self):
         self.create_new_tab()
-        self.statusBar().showMessage("Новый документ создан", 2000)
+        self.statusBar().showMessage(self.tr('created'), 2000)
 
     def save_file(self):
         text_edit = self.tabWidgetEditor.currentWidget()
@@ -308,7 +360,7 @@ class TextEditor(QMainWindow):
 
                 text_edit.setModified(False)
                 self.statusBar().showMessage(
-                    f"Файл{os.path.basename(file_path)} сохранен", 2000)
+                    self.tr('saved', os.path.basename(file_path)), 2000)
 
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка",
@@ -339,7 +391,7 @@ class TextEditor(QMainWindow):
                     self.tabWidgetEditor.setTabText(index, file_name)
 
                     self.statusBar().showMessage(
-                        f"Файл сохранен как {file_name}", 3000)
+                        self.tr('saved_as', file_name), 3000)
 
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка",
@@ -354,54 +406,54 @@ class TextEditor(QMainWindow):
         if action == 'back':
             if text_edit.isUndoAvailable():
                 text_edit.undo()
-                self.statusBar().showMessage("Отмена действия", 1500)
+                self.statusBar().showMessage(self.tr('undo'), 1500)
             else:
-                self.statusBar().showMessage("Нечего отменять", 1500)
+                self.statusBar().showMessage(self.tr('undo_unavail'), 1500)
 
         elif action == 'forward':
             if text_edit.isRedoAvailable():
                 text_edit.redo()
-                self.statusBar().showMessage("Повтор действия", 1500)
+                self.statusBar().showMessage(self.tr('redo'), 1500)
             else:
-                self.statusBar().showMessage("Нечего повторять", 1500)
+                self.statusBar().showMessage(self.tr('redo_unavail'), 1500)
 
         elif action == 'cut':
             if text_edit.hasSelectedText():
                 text_edit.cut()
-                self.statusBar().showMessage("Текст вырезан", 1500)
+                self.statusBar().showMessage(self.tr('cut'), 1500)
             else:
-                self.statusBar().showMessage("Нет выделенного текста", 1500)
+                self.statusBar().showMessage(self.tr('cut_unavail'), 1500)
 
         elif action == 'copy':
             if text_edit.hasSelectedText():
                 text_edit.copy()
-                self.statusBar().showMessage("Текст скопирован", 1500)
+                self.statusBar().showMessage(self.tr('copy'), 1500)
             else:
-                self.statusBar().showMessage("Нет выделенного текста", 1500)
+                self.statusBar().showMessage(self.tr('copy_unavail'), 1500)
 
         elif action == 'paste':
             text_edit.paste()
-            self.statusBar().showMessage("Текст вставлен", 1500)
+            self.statusBar().showMessage(self.tr('paste'), 1500)
 
         elif action == 'delete':
             if text_edit.hasSelectedText():
                 text_edit.removeSelectedText()
-                self.statusBar().showMessage("Текст удален", 1500)
+                self.statusBar().showMessage(self.tr('delete'), 1500)
             else:
-                self.statusBar().showMessage("Нет выделенного текста", 1500)
+                self.statusBar().showMessage(self.tr('delete_unavail'), 1500)
 
         elif action == 'selectAll':
             text_edit.selectAll()
-            self.statusBar().showMessage("Весь текст выделен", 1500)
+            self.statusBar().showMessage(self.tr('select_all'), 1500)
 
     def about_program(self):
         msg_box = QMessageBox(self)
         if self.current_lang == 'en':
             msg_box.setWindowTitle("About")
-            text = getattr(self, 'about_text', self.about_text)
+            text = self.about_text
         else:
             msg_box.setWindowTitle("О программе")
-            text = getattr(self, 'about_text', self.about_text)
+            text = self.about_text
 
         msg_box.setText(text)
         msg_box.setIcon(QMessageBox.Icon.Information)
@@ -412,10 +464,10 @@ class TextEditor(QMainWindow):
         msg_box = QMessageBox(self)
         if self.current_lang == 'en':
             msg_box.setWindowTitle("User Guide")
-            text = getattr(self, 'info_text', self.info_text)
+            text = self.info_text
         else:
             msg_box.setWindowTitle("Руководство пользователя")
-            text = getattr(self, 'info_text', self.info_text)
+            text = self.info_text
 
         msg_box.setText(text)
         msg_box.setIcon(QMessageBox.Icon.Information)
@@ -423,12 +475,8 @@ class TextEditor(QMainWindow):
         msg_box.exec()
 
     def closeEvent(self, event):
-        result = self.close_program()
-
-        if result is False:
-            event.ignore()
-        else:
-            event.accept()
+        self.close_program()
+        event.accept()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -450,18 +498,15 @@ class TextEditor(QMainWindow):
             QMessageBox.critical(self, "Ошибка", str(e))
 
     def translate_text(self):
-        if not hasattr(self, 'current_lang'):
-            self.current_lang = 'ru'  # по умолчанию русский
-
         # Переключаем язык
         if self.current_lang == 'ru':
             self.set_english()
             self.current_lang = 'en'
-            self.statusBar().showMessage("Language switched to English", 3000)
+            self.statusBar().showMessage(self.tr('lang_switched'), 3000)
         else:
             self.set_russian()
             self.current_lang = 'ru'
-            self.statusBar().showMessage("Язык переключен на Русский", 3000)
+            self.statusBar().showMessage(self.tr('lang_switched'), 3000)
 
     def set_russian(self):
         # Меню Файл
@@ -578,6 +623,9 @@ class TextEditor(QMainWindow):
                 <li>Ctrl+Z - Отменить</li>
                 <li>Ctrl+Y - Повторить</li>
             </ul>
+            <h3>
+                <a href="https://github.com/Alexandrdot/Editor-Analyzer/docs/ru/manual.md">Нажмите, для получения подробного руководства</a>
+            </h3>
             """
         else:
             self.about_text = """
@@ -611,4 +659,7 @@ class TextEditor(QMainWindow):
                 <li>Ctrl+Z - Undo</li>
                 <li>Ctrl+Y - Redo</li>
             </ul>
+            <h3>
+                <a href="https://github.com/Alexandrdot/Editor-Analyzer/docs/en/manual.md">Click here for a detailed guide.</a>
+            </h3>
             """
