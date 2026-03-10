@@ -1,10 +1,13 @@
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QMenuBar, QFileDialog,
-                             QMessageBox, QLabel)
+                             QMessageBox, QLabel, QTableWidget,
+                             QTableWidgetItem, QHeaderView)
 from PyQt6.Qsci import (QsciScintilla, QsciLexerPython, QsciLexerCPP,
                         QsciLexerJava, QsciLexerHTML, QsciLexerJavaScript)
 from PyQt6.QtGui import QAction, QColor, QDesktopServices
+from PyQt6.QtGui import QColor
 from PyQt6.QtCore import QUrl
 from PyQt6.uic import loadUi
+from scanner import Scanner
 import os
 import sys
 
@@ -55,10 +58,10 @@ class SimpleCodeEditor(QsciScintilla):
                 lexer.setColor(QColor("#DCDCAA"), QsciLexerPython.Decorator)
 
             elif language in ["cpp", "java", "javascript"]:
-                lexer.setColor(QColor("#569CD6"), 0)  # Keywords
-                lexer.setColor(QColor("#4EC9B0"), 1)  # Types
-                lexer.setColor(QColor("#CE9178"), 2)  # Strings
-                lexer.setColor(QColor("#6A9955"), 3)  # Comments
+                lexer.setColor(QColor("#FF69B4"), 5)
+                lexer.setColor(QColor("#CE9178"), 6)
+                lexer.setColor(QColor("#6A9955"), 8)
+                lexer.setColor(QColor("#FFFFFF"), 10)
 
             self.setLexer(lexer)
 
@@ -126,12 +129,19 @@ class TextEditor(QMainWindow):
         self.set_russian()
 
         self.tabWidgetEditor = self.findChild(QTabWidget, 'tabWidgetEditor')
+        self.tabWidgetResult = self.findChild(QTabWidget, 'tabWidgetResult')
         self.menubar = self.findChild(QMenuBar, 'menubar')
         self.label_texteditor = self.findChild(QLabel, 'label_texteditor')
         self.label_result = self.findChild(QLabel, 'label_result')
+
         self.tabWidgetEditor.setTabsClosable(True)
         self.tabWidgetEditor.tabCloseRequested.connect(self.close_tab)
+        
+        self.tabWidgetResult.setTabsClosable(True)
+        #self.tabWidgetResult.tabCloseRequested.connect(self.close_tab)
+
         self.setAcceptDrops(True)
+        
         self.file_paths = {}
 
         self.label_texteditor.linkActivated.connect(self.open_link)
@@ -209,6 +219,10 @@ class TextEditor(QMainWindow):
         self.translate = self.findChild(QAction, 'translate')
         if self.translate:
             self.translate.triggered.connect(self.translate_text)
+
+        self.run = self.findChild(QAction, 'play')
+        if self.run:
+            self.run.triggered.connect(self.run_program)
 
     def close_program(self):
         # Проверяем все открытые вкладки
@@ -288,6 +302,10 @@ class TextEditor(QMainWindow):
         self.tabWidgetEditor.removeTab(index)
         widget.deleteLater()
 
+        if self.tabWidgetEditor.count() == 0:
+            self.tabWidgetResult.removeTab(0)
+            self.tabWidgetResult.removeTab(0)
+
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -337,6 +355,7 @@ class TextEditor(QMainWindow):
             '.java': 'java',
             '.html': 'html', '.htm': 'html',
             '.js': 'javascript',
+            '.swift': 'javascript',
             '.txt': None,
         }
         return language_map.get(ext, None)
@@ -578,6 +597,62 @@ class TextEditor(QMainWindow):
         self.update_tab_titles('en')
         self.update_dialog_texts('en')
 
+    def get_token_type_ru(self, code, type_name, lexeme):
+
+        if code in [1, 2]:  # enum, case
+            return "ключевое слово"
+        elif code in [3, 4, 5, 6, 7]:  # типы данных
+            return "тип данных"
+        elif code == 8:
+            return "идентификатор"
+        elif code in [9, 10, 11, 12, 14, 15]:  # разделители
+            type_map = {
+                9: "запятая",
+                10: "точка с запятой",
+                11: "открывающая скобка",
+                12: "закрывающая скобка",
+                14: "оператор присваивания",
+                15: "двоеточие"
+            }
+            return type_map.get(code, "разделитель")
+        elif code == 16:
+            return "строка"
+        elif code == 17:
+            return "целое число"
+        elif code == 18:
+            return "число с плавающей точкой"
+        elif lexeme == ' ':
+            return "пробел"
+        return type_name
+
+    def get_token_type_en(self, code, type_name, lexeme):
+
+        if code in [1, 2]:  # enum, case
+            return "keyword"
+        elif code in [3, 4, 5, 6, 7]:  # data types
+            return "data type"
+        elif code == 8:
+            return "identifier"
+        elif code in [9, 10, 11, 12, 14, 15]:  # separators
+            type_map = {
+                9: "comma",
+                10: "semicolon",
+                11: "opening brace",
+                12: "closing brace",
+                14: "assignment operator",
+                15: "colon"
+            }
+            return type_map.get(code, "separator")
+        elif code == 16:
+            return "string"
+        elif code == 17:
+            return "integer"
+        elif code == 18:
+            return "float"
+        elif lexeme == ' ':
+            return "space"
+        return type_name
+
     def update_tab_titles(self, lang):
         for i in range(self.tabWidgetEditor.count()):
             widget = self.tabWidgetEditor.widget(i)
@@ -663,3 +738,131 @@ class TextEditor(QMainWindow):
                 <a href="https://github.com/Alexandrdot/Editor-Analyzer/blob/main/docs/en/manual.md">Click here for a detailed guide.</a>
             </h3>
             """
+
+    def on_table_click(self, row, col):
+
+        table = self.sender()
+        if not table:
+            return
+        # Получаем позицию из 4-й колонки (индекс 3)
+        position_item = table.item(row, 3)
+        if not position_item:
+            return
+
+        # Получаем текст позиции (например: "строка 1, 5-9")
+        position_text = position_item.text()
+
+        try:
+            parts = position_text.replace("строка ", "").split(", ")
+            line = int(parts[0])
+
+            positions = parts[1].split("-")
+            start_pos = int(positions[0])
+            end_pos = int(positions[1])
+
+            editor = self.tabWidgetEditor.currentWidget()
+            if editor:
+                # Переходим к позиции
+                editor.setCursorPosition(line - 1, start_pos - 1)
+                editor.ensureCursorVisible()
+
+                # Выделяем текст (опционально)
+                from_pos = editor.positionFromLineIndex(line - 1, start_pos - 1)
+                to_pos = editor.positionFromLineIndex(line - 1, end_pos)
+                editor.SendScintilla(editor.SCI_SETSEL, from_pos, to_pos)
+
+        except Exception as e:
+            print(f"Ошибка перехода: {e}")
+
+    def run_program(self):
+        editor = self.tabWidgetEditor.currentWidget()
+        if not editor:
+            QMessageBox.warning(self, "Внимание", "Нет открытых файлов для анализа")
+            return
+
+        text = editor.text()
+        if not text.strip():
+            QMessageBox.warning(self, "Внимание", "Текст пустой")
+            return
+
+        scanner = Scanner()
+        results = scanner.scan(text)
+
+        # Разделяем на токены и ошибки
+        tokens = results
+        # errors = [r for r in results if r[0] == 'ERROR']
+
+        while self.tabWidgetResult.count() > 0:
+            self.tabWidgetResult.removeTab(0)
+
+        # tab 1 lex
+        token_table = QTableWidget()
+        token_table.setRowCount(len(tokens))
+        token_table.setColumnCount(4)
+
+        if self.current_lang == 'ru':
+            headers = ["Код", "Тип лексемы", "Лексема", "Позиция"]
+        else:
+            headers = ["Code", "Token type", "Lexeme", "Position"]
+
+        token_table.setHorizontalHeaderLabels(headers)
+        token_table.setColumnWidth(1, 150)  # Тип лексемы
+        token_table.setColumnWidth(2, 150)  # Лексема
+        token_table.setColumnWidth(3, 150)  # Позиция
+        for row, token in enumerate(tokens):
+            code = token[0]
+            type_name = token[1]
+            lexeme = token[2]
+            position = token[3]
+
+            if self.current_lang == 'ru':
+                type_text = self.get_token_type_ru(code, type_name, lexeme)
+            else:
+                type_text = self.get_token_type_en(code, type_name, lexeme)
+
+            token_table.setItem(row, 0, QTableWidgetItem(str(code)))
+            token_table.setItem(row, 1, QTableWidgetItem(type_text))
+            token_table.setItem(row, 2, QTableWidgetItem(lexeme))
+            token_table.setItem(row, 3, QTableWidgetItem(position))
+
+        token_table.setAlternatingRowColors(True)
+        token_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        token_table.horizontalHeader().setStretchLastSection(True)
+        token_table.cellClicked.connect(self.on_table_click)
+
+        tab_name = "Лексемы" if self.current_lang == 'ru' else "Tokens"
+        self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(tokens)})")
+
+        # tab 2 errors
+        error_table = QTableWidget()
+        error_table.setColumnCount(3)
+
+        if self.current_lang == 'ru':
+            error_headers = ["Тип ошибки", "Символ", "Позиция"]
+        else:
+            error_headers = ["Error type", "Symbol", "Position"]
+
+        error_table.setHorizontalHeaderLabels(error_headers)
+
+        # if len(errors) > 0:
+        #     error_table.setRowCount(len(errors))
+        #     for row, error in enumerate(errors):
+        #         error_table.setItem(row, 0, QTableWidgetItem(str(error[1])))
+        #         error_table.setItem(row, 1, QTableWidgetItem(str(error[2])))
+        #         error_table.setItem(row, 2, QTableWidgetItem(str(error[3])))
+        #         # Красим ошибки в красный
+        #         for col in range(3):
+        #             error_table.item(row, col).setBackground(QColor("#FF6B6B"))
+
+        error_table.setAlternatingRowColors(True)
+        error_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        error_table.horizontalHeader().setStretchLastSection(True)
+        error_table.cellClicked.connect(self.on_table_click)
+
+        error_tab_name = "Ошибки" if self.current_lang == 'ru' else "Errors"
+        self.tabWidgetResult.addTab(error_table, f"{error_tab_name} ({0})")
+
+        self.tabWidgetResult.setCurrentIndex(0)
+
+        status_msg = f"Анализ завершен: {len(tokens)} лексем, {0} ошибок"
+        self.statusBar().showMessage(status_msg, 5000)
