@@ -15,9 +15,18 @@ class Scanner:
                 char = line[i]
                 start = i + 1
 
-                # Пробелы и табуляцию пропускаем
+                # Пробелы и табуляцию - сохраняем как один токен
                 if char in [' ', '\t']:
-                    i += 1
+                    space_count = 0
+                    while i < length and line[i] in [' ', '\t']:
+                        space_count += 1
+                        i += 1
+                    results.append([
+                        13,  # код пробела
+                        CODS_TYPES[13],  # 'space'
+                        ' ',  # один пробел в лексеме
+                        f"строка {line_num}, {start}-{i}"  # позиция всех пробелов
+                    ])
                     continue
 
                 # Комментарии // - пропускаем всю строку

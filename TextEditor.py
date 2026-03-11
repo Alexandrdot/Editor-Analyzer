@@ -598,19 +598,19 @@ class TextEditor(QMainWindow):
         self.update_dialog_texts('en')
 
     def get_token_type_ru(self, code, type_name, lexeme):
-
         if code in [1, 2]:  # enum, case
             return "ключевое слово"
         elif code in [3, 4, 5, 6, 7]:  # типы данных
             return "тип данных"
         elif code == 8:
             return "идентификатор"
-        elif code in [9, 10, 11, 12, 14, 15]:  # разделители
+        elif code in [9, 10, 11, 12, 14, 15, 13]:  # разделители (добавил 13)
             type_map = {
                 9: "запятая",
                 10: "точка с запятой",
                 11: "открывающая скобка",
                 12: "закрывающая скобка",
+                13: "пробел",  # добавил
                 14: "оператор присваивания",
                 15: "двоеточие"
             }
@@ -621,24 +621,22 @@ class TextEditor(QMainWindow):
             return "целое число"
         elif code == 18:
             return "число с плавающей точкой"
-        elif lexeme == ' ':
-            return "пробел"
         return type_name
 
     def get_token_type_en(self, code, type_name, lexeme):
-
         if code in [1, 2]:  # enum, case
             return "keyword"
         elif code in [3, 4, 5, 6, 7]:  # data types
             return "data type"
         elif code == 8:
             return "identifier"
-        elif code in [9, 10, 11, 12, 14, 15]:  # separators
+        elif code in [9, 10, 11, 12, 14, 15, 13]:  # separators (добавил 13)
             type_map = {
                 9: "comma",
                 10: "semicolon",
                 11: "opening brace",
                 12: "closing brace",
+                13: "space",  # добавил
                 14: "assignment operator",
                 15: "colon"
             }
@@ -649,8 +647,6 @@ class TextEditor(QMainWindow):
             return "integer"
         elif code == 18:
             return "float"
-        elif lexeme == ' ':
-            return "space"
         return type_name
 
     def update_tab_titles(self, lang):
@@ -785,12 +781,22 @@ class TextEditor(QMainWindow):
             QMessageBox.warning(self, "Внимание", "Текст пустой")
             return
 
-        scanner = Scanner()
-        results = scanner.scan(text)
+        # scanner = Scanner()
+        # scanner_results = scanner.scan(text)
+
+        # Используем Flex лексер
+        from flex_bison.lexer.lexer_wrapper import FlexLexer
+        lexer = FlexLexer("./flex_bison/lexer/lexer")
+        lexer_result = lexer.scan(text)  # ← переименовал
+
+        # Запускаем парсер
+        from flex_bison.parser.parser_wrapper import BisonParser
+        parser = BisonParser("./flex_bison/parser/parser")
+        parser_result = parser.parse(text)  # ← переименовал
 
         # Разделяем на токены и ошибки
-        tokens = results
-        # errors = [r for r in results if r[0] == 'ERROR']
+        tokens = lexer_result
+        errors = parser_result['errors']  # ← берем ошибки из результата парсера
 
         while self.tabWidgetResult.count() > 0:
             self.tabWidgetResult.removeTab(0)
@@ -838,21 +844,30 @@ class TextEditor(QMainWindow):
         error_table.setColumnCount(3)
 
         if self.current_lang == 'ru':
-            error_headers = ["Тип ошибки", "Символ", "Позиция"]
+            error_headers = ["Тип ошибки", "Сообщение", "Строка"]  # ← изменил заголовки
         else:
-            error_headers = ["Error type", "Symbol", "Position"]
+            error_headers = ["Error type", "Message", "Line"]     # ← изменил заголовки
 
         error_table.setHorizontalHeaderLabels(error_headers)
 
-        # if len(errors) > 0:
-        #     error_table.setRowCount(len(errors))
-        #     for row, error in enumerate(errors):
-        #         error_table.setItem(row, 0, QTableWidgetItem(str(error[1])))
-        #         error_table.setItem(row, 1, QTableWidgetItem(str(error[2])))
-        #         error_table.setItem(row, 2, QTableWidgetItem(str(error[3])))
-        #         # Красим ошибки в красный
-        #         for col in range(3):
-        #             error_table.item(row, col).setBackground(QColor("#FF6B6B"))
+        if len(errors) > 0:
+            error_table.setRowCount(len(errors))
+            for row, error in enumerate(errors):
+                # У парсера ошибки приходят в формате ['ERROR', 'syntax', 'текст ошибки']
+                error_table.setItem(row, 0, QTableWidgetItem("Синтаксис"))
+                error_table.setItem(row, 1, QTableWidgetItem(error[2]))  # текст ошибки
+                error_table.setItem(row, 2, QTableWidgetItem("-"))       # строка (можно добавить позже)
+                # Красим ошибки в красный
+                for col in range(3):
+                    error_table.item(row, col).setBackground(QColor("#FF6B6B"))
+        else:
+            # Если ошибок нет - показываем зеленую надпись
+            error_table.setRowCount(1)
+            error_table.setColumnCount(1)
+            error_table.setHorizontalHeaderLabels(["Результат"] if self.current_lang == 'ru' else ["Result"])
+            success_item = QTableWidgetItem("✅ Синтаксис корректен")
+            success_item.setBackground(QColor("#90EE90"))
+            error_table.setItem(0, 0, success_item)
 
         error_table.setAlternatingRowColors(True)
         error_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -860,9 +875,9 @@ class TextEditor(QMainWindow):
         error_table.cellClicked.connect(self.on_table_click)
 
         error_tab_name = "Ошибки" if self.current_lang == 'ru' else "Errors"
-        self.tabWidgetResult.addTab(error_table, f"{error_tab_name} ({0})")
+        self.tabWidgetResult.addTab(error_table, f"{error_tab_name} ({len(errors)})")
 
         self.tabWidgetResult.setCurrentIndex(0)
 
-        status_msg = f"Анализ завершен: {len(tokens)} лексем, {0} ошибок"
+        status_msg = f"Анализ завершен: {len(tokens)} лексем, {len(errors)} ошибок"  # ← исправил
         self.statusBar().showMessage(status_msg, 5000)
