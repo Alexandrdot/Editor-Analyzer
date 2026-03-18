@@ -8,4 +8,4 @@
 
 | Correct | Error |
 |--------------|-------------|
-| ![Correct](./screenshots/correct_test_ru.png) | ![Error](./screenshots/error_test_ru.png) |
+| ![Correct](../../screenshots/correct_test_ru.png) | ![Error](../../screenshots/error_test_ru.png) |
