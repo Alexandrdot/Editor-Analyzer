@@ -22,5 +22,5 @@ class FlexLexer:
             if line:
                 parts = line.split('|')
                 if len(parts) == 4:
-                    tokens.append([int(parts[0]), parts[1], parts[2], parts[3]])
+                    tokens.append([(parts[0]), parts[1], parts[2], parts[3]])
         return tokens

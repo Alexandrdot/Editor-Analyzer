@@ -99,6 +99,10 @@ Button|	Action|	Description|
 |--------------|-------------|---|
 | ![Main window](./screenshots/main.png) | ![The "File" menu](./screenshots/menu_file.png) | ![The "About" menu](./screenshots/about.png)
 
+## Analyzers
+1. [Lexical analyzer](./docs/en/lexer.md)
+2. Parser
+
 ## Technical limitations
 
 1. Encoding: Only UTF-8 is supported (other encodings may not be displayed correctly)
