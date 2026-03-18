@@ -1,4 +1,4 @@
-enum a1:Float { 
-	case a = 3.14 удакдабддк
-	case b = 2000000.14
+enum 1 {
+	case ed
+	case de;
 }

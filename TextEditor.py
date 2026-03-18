@@ -600,53 +600,31 @@ class TextEditor(QMainWindow):
     def get_token_type_ru(self, code, type_name, lexeme):
         if code in [1, 2]:  # enum, case
             return "ключевое слово"
-        elif code in [3, 4, 5, 6, 7]:  # типы данных
-            return "тип данных"
-        elif code == 8:
+        elif code == 3:
             return "идентификатор"
-        elif code in [9, 10, 11, 12, 14, 15, 13]:  # разделители (добавил 13)
+        elif code in [4, 5, 6, 7]:
             type_map = {
-                9: "запятая",
-                10: "точка с запятой",
-                11: "открывающая скобка",
-                12: "закрывающая скобка",
-                13: "пробел",  # добавил
-                14: "оператор присваивания",
-                15: "двоеточие"
+                4: "точка с запятой",
+                5: "открывающая скобка",
+                6: "закрывающая скобка",
+                7: "пробел",
             }
             return type_map.get(code, "разделитель")
-        elif code == 16:
-            return "строка"
-        elif code == 17:
-            return "целое число"
-        elif code == 18:
-            return "число с плавающей точкой"
         return type_name
 
     def get_token_type_en(self, code, type_name, lexeme):
         if code in [1, 2]:  # enum, case
             return "keyword"
-        elif code in [3, 4, 5, 6, 7]:  # data types
-            return "data type"
-        elif code == 8:
+        elif code == 3:
             return "identifier"
-        elif code in [9, 10, 11, 12, 14, 15, 13]:  # separators (добавил 13)
+        elif code in [4, 5, 6, 7]:
             type_map = {
-                9: "comma",
-                10: "semicolon",
-                11: "opening brace",
-                12: "closing brace",
-                13: "space",  # добавил
-                14: "assignment operator",
-                15: "colon"
+                4: "semicolon",
+                5: "opening brace",
+                6: "closing brace",
+                7: "space",
             }
             return type_map.get(code, "separator")
-        elif code == 16:
-            return "string"
-        elif code == 17:
-            return "integer"
-        elif code == 18:
-            return "float"
         return type_name
 
     def update_tab_titles(self, lang):
@@ -839,24 +817,33 @@ class TextEditor(QMainWindow):
         tab_name = "Лексемы" if self.current_lang == 'ru' else "Tokens"
         self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(tokens)})")
 
+         # 2. ЗАПУСКАЕМ ПАРСЕР (новый)
+        from flex_bison.parser.parser_wrapper import BisonParser
+        parser = BisonParser("./flex_bison/parser/parser")
+        parser_result = parser.parse(text)
+        
+        errors = parser_result['errors']
+        success = parser_result['success']
+
         # tab 2 errors
         error_table = QTableWidget()
         error_table.setColumnCount(3)
 
         if self.current_lang == 'ru':
-            error_headers = ["Тип ошибки", "Сообщение", "Строка"]  # ← изменил заголовки
+            error_headers = ["Неверный фрагмент", "Местоположение", "Описание"]
         else:
-            error_headers = ["Error type", "Message", "Line"]     # ← изменил заголовки
+            error_headers = ["Invalid fragment", "Location", "Description"]
 
         error_table.setHorizontalHeaderLabels(error_headers)
 
         if len(errors) > 0:
             error_table.setRowCount(len(errors))
             for row, error in enumerate(errors):
-                # У парсера ошибки приходят в формате ['ERROR', 'syntax', 'текст ошибки']
-                error_table.setItem(row, 0, QTableWidgetItem("Синтаксис"))
-                error_table.setItem(row, 1, QTableWidgetItem(error[2]))  # текст ошибки
-                error_table.setItem(row, 2, QTableWidgetItem("-"))       # строка (можно добавить позже)
+                # error = [фрагмент, местоположение, описание]
+                error_table.setItem(row, 0, QTableWidgetItem(error[0]))
+                error_table.setItem(row, 1, QTableWidgetItem(error[1]))
+                error_table.setItem(row, 2, QTableWidgetItem(error[2]))
+                
                 # Красим ошибки в красный
                 for col in range(3):
                     error_table.item(row, col).setBackground(QColor("#FF6B6B"))
@@ -868,16 +855,6 @@ class TextEditor(QMainWindow):
             success_item = QTableWidgetItem("✅ Синтаксис корректен")
             success_item.setBackground(QColor("#90EE90"))
             error_table.setItem(0, 0, success_item)
-
-        error_table.setAlternatingRowColors(True)
-        error_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        error_table.horizontalHeader().setStretchLastSection(True)
-        error_table.cellClicked.connect(self.on_table_click)
-
-        error_tab_name = "Ошибки" if self.current_lang == 'ru' else "Errors"
-        self.tabWidgetResult.addTab(error_table, f"{error_tab_name} ({len(errors)})")
-
-        self.tabWidgetResult.setCurrentIndex(0)
-
-        status_msg = f"Анализ завершен: {len(tokens)} лексем, {len(errors)} ошибок"  # ← исправил
-        self.statusBar().showMessage(status_msg, 5000)
+        
+        tab_name = "Парсер" if self.current_lang == 'ru' else "Parser"
+        self.tabWidgetResult.addTab(error_table, f"{tab_name} ({len(tokens)})")

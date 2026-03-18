@@ -19,25 +19,43 @@ class BisonParser:
             os.unlink(temp_file)
             return {
                 'success': False,
-                'output': '',
-                'errors': [['ERROR', 'timeout', 'Parser timeout']]
+                'errors': []
             }
         
+        # Читаем stdout и stderr
         output = process.readAllStandardOutput().data().decode('utf-8')
         error_output = process.readAllStandardError().data().decode('utf-8')
         
         os.unlink(temp_file)
         
-        # Парсим вывод
+        # Собираем все ошибки
         errors = []
-        for line in error_output.split('\n'):
-            if line.strip():
-                errors.append(['ERROR', 'syntax', line])
+        success = False
         
-        success = (process.exitCode() == 0 and len(errors) == 0)
+        # Сначала проверяем stderr (там могут быть отладочные сообщения)
+        for line in error_output.split('\n'):
+            if 'DEBUG:' in line:
+                print(line)
+        
+        # Парсим stdout
+        for line in output.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+            
+            if line.startswith('SUCCESS|'):
+                success = True
+            elif line.startswith('ERROR|'):
+                # Формат: ERROR|фрагмент|строка X, позиция Y|сообщение
+                parts = line.split('|')
+                if len(parts) >= 4:
+                    errors.append([
+                        parts[1],        # фрагмент
+                        parts[2],        # местоположение
+                        parts[3]         # описание
+                    ])
         
         return {
             'success': success,
-            'output': output,
             'errors': errors
         }

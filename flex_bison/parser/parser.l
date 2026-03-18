@@ -1,55 +1,42 @@
-%{
-#include "parser.tab.h"
-#include <string.h>
+%option noyywrap
+%option nounput
+%option noinput
 
-int line_num = 1;
+%{
+#include <stdio.h>
+#include <string.h>
+#include "parser.tab.h"
+
+extern int yylineno;
+extern char *yytext;
+
+void count_lines(void);
 %}
 
-%option noyywrap
-%option yylineno
+%%
+
+enum                { count_lines(); return ENUM; }
+case                { count_lines(); return CASE; }
+[a-zA-Z_][a-zA-Z0-9_]*  { count_lines(); yylval.str = strdup(yytext); return IDENTIFIER; }
+";"                 { count_lines(); return SEMICOLON; }
+":"                 { count_lines(); return COLON; }
+"{"                 { count_lines(); return LBRACE; }
+"}"                 { count_lines(); return RBRACE; }
+[ \t]+              { /* игнорируем пробелы */ }
+\n                  { yylineno++; }
+.                   { 
+    fprintf(stderr, "DEBUG: Unexpected character '%s' at line %d\n", yytext, yylineno);
+    count_lines(); 
+    return ERROR; 
+}
 
 %%
 
-[ \t]+          { /* игнорируем */ }
-\n              { line_num++; }
-
-"enum"          { return ENUM; }
-"case"          { return CASE; }
-
-"String"        { yylval.string = strdup(yytext); return TYPE; }
-"Int"           { yylval.string = strdup(yytext); return TYPE; }
-"Float"         { yylval.string = strdup(yytext); return TYPE; }
-"Double"        { yylval.string = strdup(yytext); return TYPE; }
-"Character"     { yylval.string = strdup(yytext); return TYPE; }
-
-[a-zA-Z_][a-zA-Z0-9_]* { 
-    yylval.string = strdup(yytext); 
-    return IDENTIFIER; 
+void count_lines(void) {
+    char *c;
+    for (c = yytext; *c != '\0'; c++) {
+        if (*c == '\n') {
+            yylineno++;
+        }
+    }
 }
-
-[0-9]+          { 
-    yylval.int_val = atoi(yytext); 
-    return INTEGER; 
-}
-
-[0-9]+\.[0-9]+  { 
-    yylval.float_val = atof(yytext); 
-    return FLOAT; 
-}
-
-\"[^\"]*\"      { 
-    yytext[yyleng-1] = '\0';
-    yylval.string = strdup(yytext+1);
-    return STRING; 
-}
-
-"{"             { return LBRACE; }
-"}"             { return RBRACE; }
-"="             { return ASSIGN; }
-":"             { return COLON; }
-","             { return COMMA; }
-";"             { return SEMICOLON; }
-
-.               { /* игнорируем */ }
-
-%%
