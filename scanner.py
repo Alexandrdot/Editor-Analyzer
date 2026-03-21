@@ -25,7 +25,7 @@ class Scanner:
                         7,  # код пробела
                         CODS_TYPES[7],  # 'space'
                         ' ',  # один пробел в лексеме
-                        f"строка {line_num}, {start}-{i}"  # позиция всех пробелов
+                        f"строка {line_num}, {start}-{i}"  # позиция пробелов
                     ])
                     continue
 
@@ -53,9 +53,9 @@ class Scanner:
                         i += 1
 
                     if word in KEYWORDS:
-                        code = KEYWORDS[word] #CASE ENUM  
+                        code = KEYWORDS[word]
                     else:
-                        code = 3 #IDENT
+                        code = 3
 
                     results.append([
                         code,
@@ -74,16 +74,18 @@ class Scanner:
 
                     if i < length and (line[i].isalnum()):
                         word = underscores
-                        while i < length and (line[i].isalnum() or line[i] == '_'):
+                        while i < length and (line[i].isalnum() or
+                                              line[i] == '_'):
                             word += line[i]
                             i += 1
                         results.append([
-                            3, # ident
+                            3,  # ident
                             CODS_TYPES[3],
                             word,
                             f"строка {line_num}, {start}-{i}"
                         ])
                     else:
+                        # Ошибка: только подчеркивания
                         results.append([
                             'ERROR',
                             'invalid symbol (only underscores)',
@@ -92,13 +94,36 @@ class Scanner:
                         ])
                     continue
 
-                # Неизвестный символ
-                results.append([
-                    'ERROR',
-                    'invalid symbol',
-                    char,
-                    f"строка {line_num}, {start}"
-                ])
-                i += 1
+                # Собираем все подряд идущие недопустимые символы
+                invalid_chars = ''
+                while i < length:
+                    current_char = line[i]
+
+                    # Проверяем, является ли текущий символ допустимым
+                    is_valid = (
+                        current_char in [' ', '\t'] or
+                        current_char in SYMBOLS or
+                        current_char.isalpha() or
+                        current_char == '_' or
+                        (current_char == '/' and i + 1 < length
+                         and line[i + 1] == '/')
+                    )
+
+                    if is_valid:
+                        break
+                    invalid_chars += current_char
+                    i += 1
+
+                # Если собрали недопустимые символы - добавляем одну ошибку
+                if invalid_chars:
+                    end_pos = start + len(invalid_chars) - 1
+                    results.append([
+                        'ERROR',
+                        'invalid symbol',
+                        invalid_chars,  # вся группа недопустимых символов
+                        f"строка {line_num}, {start}-{end_pos}"
+                    ])
+
+                # Продолжаем цикл (i уже увеличили в while)
 
         return results

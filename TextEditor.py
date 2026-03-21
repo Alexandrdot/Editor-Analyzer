@@ -1,13 +1,13 @@
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QMenuBar, QFileDialog,
                              QMessageBox, QLabel, QTableWidget,
-                             QTableWidgetItem, QHeaderView)
+                             QTableWidgetItem)
 from PyQt6.Qsci import (QsciScintilla, QsciLexerPython, QsciLexerCPP,
                         QsciLexerJava, QsciLexerHTML, QsciLexerJavaScript)
 from PyQt6.QtGui import QAction, QColor, QDesktopServices
-from PyQt6.QtGui import QColor
 from PyQt6.QtCore import QUrl
 from PyQt6.uic import loadUi
 from scanner import Scanner
+from parser import Parser
 import os
 import sys
 
@@ -725,6 +725,7 @@ class TextEditor(QMainWindow):
 
         # Получаем текст позиции (например: "строка 1, 5-9")
         position_text = position_item.text()
+        print(position_text)
 
         try:
             parts = position_text.replace("строка ", "").split(", ")
@@ -751,7 +752,8 @@ class TextEditor(QMainWindow):
     def run_program(self):
         editor = self.tabWidgetEditor.currentWidget()
         if not editor:
-            QMessageBox.warning(self, "Внимание", "Нет открытых файлов для анализа")
+            QMessageBox.warning(self, "Внимание",
+                                "Нет открытых файлов для анализа")
             return
 
         text = editor.text()
@@ -759,22 +761,16 @@ class TextEditor(QMainWindow):
             QMessageBox.warning(self, "Внимание", "Текст пустой")
             return
 
-        # scanner = Scanner()
-        # scanner_results = scanner.scan(text)
-
+        scanner = Scanner()
+        scanner_results = scanner.scan(text)
+        tokens = scanner_results
         # Используем Flex лексер
-        from flex_bison.lexer.lexer_wrapper import FlexLexer
-        lexer = FlexLexer("./flex_bison/lexer/lexer")
-        lexer_result = lexer.scan(text)  # ← переименовал
+        # from flex_bison.lexer.lexer_wrapper import FlexLexer
+        # lexer = FlexLexer("./flex_bison/lexer/lexer")
+        # lexer_result = lexer.scan(text)  # ← переименовал
 
-        # Запускаем парсер
-        from flex_bison.parser.parser_wrapper import BisonParser
-        parser = BisonParser("./flex_bison/parser/parser")
-        parser_result = parser.parse(text)  # ← переименовал
-
-        # Разделяем на токены и ошибки
-        tokens = lexer_result
-        errors = parser_result['errors']  # ← берем ошибки из результата парсера
+        parser = Parser()
+        syntax_errors = parser.parse(tokens)
 
         while self.tabWidgetResult.count() > 0:
             self.tabWidgetResult.removeTab(0)
@@ -817,15 +813,6 @@ class TextEditor(QMainWindow):
         tab_name = "Лексемы" if self.current_lang == 'ru' else "Tokens"
         self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(tokens)})")
 
-         # 2. ЗАПУСКАЕМ ПАРСЕР (новый)
-        from flex_bison.parser.parser_wrapper import BisonParser
-        parser = BisonParser("./flex_bison/parser/parser")
-        parser_result = parser.parse(text)
-        
-        errors = parser_result['errors']
-        success = parser_result['success']
-
-        # tab 2 errors
         error_table = QTableWidget()
         error_table.setColumnCount(3)
 
@@ -836,25 +823,45 @@ class TextEditor(QMainWindow):
 
         error_table.setHorizontalHeaderLabels(error_headers)
 
-        if len(errors) > 0:
-            error_table.setRowCount(len(errors))
-            for row, error in enumerate(errors):
-                # error = [фрагмент, местоположение, описание]
-                error_table.setItem(row, 0, QTableWidgetItem(error[0]))
-                error_table.setItem(row, 1, QTableWidgetItem(error[1]))
-                error_table.setItem(row, 2, QTableWidgetItem(error[2]))
-                
-                # Красим ошибки в красный
+        if syntax_errors:
+            error_table.setRowCount(len(syntax_errors))
+            for row, error in enumerate(syntax_errors):
+                error_table.setItem(row, 0,
+                                    QTableWidgetItem(error['fragment']))
+                location = f"строка {error['line']}, позиция {error['pos']}"
+                error_table.setItem(row, 1, QTableWidgetItem(location))
+                error_table.setItem(row, 2, QTableWidgetItem(error['message']))
+
                 for col in range(3):
                     error_table.item(row, col).setBackground(QColor("#FF6B6B"))
         else:
-            # Если ошибок нет - показываем зеленую надпись
             error_table.setRowCount(1)
             error_table.setColumnCount(1)
-            error_table.setHorizontalHeaderLabels(["Результат"] if self.current_lang == 'ru' else ["Result"])
-            success_item = QTableWidgetItem("✅ Синтаксис корректен")
+            if self.current_lang == 'ru':
+                error_table.setHorizontalHeaderLabels(["Результат"])
+                success_text = "✅ Синтаксис корректен"
+            else:
+                error_table.setHorizontalHeaderLabels(["Result"])
+                success_text = "✅ Syntax is correct"
+
+            success_item = QTableWidgetItem(success_text)
             success_item.setBackground(QColor("#90EE90"))
             error_table.setItem(0, 0, success_item)
-        
-        tab_name = "Парсер" if self.current_lang == 'ru' else "Parser"
-        self.tabWidgetResult.addTab(error_table, f"{tab_name} ({len(tokens)})")
+
+        error_table.setAlternatingRowColors(True)
+        error_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        error_table.horizontalHeader().setStretchLastSection(True)
+
+        # Навигация по клику
+        error_table.cellClicked.connect(self.on_table_click)
+
+        error_tab_name = "Синтаксис" if self.current_lang == 'ru' else "Syntax"
+        error_count = len(syntax_errors)
+        self.tabWidgetResult.addTab(
+            error_table, f"{error_tab_name} ({error_count})")
+
+        self.tabWidgetResult.setCurrentIndex(0)
+
+        # Статус
+        status_msg = f"Лексем: {len(tokens)}, Ошибок: {error_count}"
+        self.statusBar().showMessage(status_msg, 5000)
