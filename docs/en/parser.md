@@ -1,7 +1,5 @@
 ## Development of a Syntax Analyzer (Parser) for the Swift enum Construct
 
---
-
 ## 1. Grammar Development (Full Definition of the Developed Grammar)
 
 The grammar G[Enum] in BNF notation is defined as follows:
