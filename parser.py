@@ -23,7 +23,8 @@ class Parser:
             self.errors.append({
                 'fragment': '',
                 'line': 1,
-                'pos': 1,
+                'start_pos': 1,
+                'end_pos': 1,
                 'message': 'Пустой входной текст'
             })
             return self.errors
@@ -34,11 +35,13 @@ class Parser:
         return self.errors
 
     def _get_line(self, token):
-
         return int(token[3].replace('строка ', '').split(',')[0])
 
-    def _get_pos(self, token):
+    def _get_start_pos(self, token):
         return int(token[3].split(',')[1].strip().split('-')[0])
+
+    def _get_end_pos(self, token):
+        return int(token[3].split(',')[1].strip().split('-')[1])
 
     def current(self):
         while self.pos < len(self.tokens):
@@ -84,7 +87,8 @@ class Parser:
                 self.errors.append({
                     'fragment': token[2],
                     'line': self._get_line(token),
-                    'pos': self._get_pos(token),
+                    'start_pos': self._get_start_pos(token),
+                    'end_pos': self._get_end_pos(token),
                     'message': 'Ожидалось ключевое слово enum'
                 })
                 self.irons_recovery(self.follow['EnumDecl'])
@@ -97,7 +101,8 @@ class Parser:
                 self.errors.append({
                     'fragment': token[2],
                     'line': self._get_line(token),
-                    'pos': self._get_pos(token),
+                    'start_pos': self._get_start_pos(token),
+                    'end_pos': self._get_end_pos(token),
                     'message': 'Отсутствие идентификатора после enum'
                 })
                 self.irons_recovery(self.follow['Identifier'])
@@ -109,7 +114,8 @@ class Parser:
                 self.errors.append({
                     'fragment': token[2],
                     'line': self._get_line(token),
-                    'pos': self._get_pos(token),
+                    'start_pos': self._get_start_pos(token),
+                    'end_pos': self._get_end_pos(token),
                     'message': 'Отсутствие { после идентификатора enum'
                 })
                 self.irons_recovery(self.follow['EnumBody'])
@@ -123,9 +129,10 @@ class Parser:
             token = self.current()
             if token:
                 self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'pos': self._get_pos(token),
+                    'fragment': token[2] if token else '',
+                    'line': self._get_line(token) if token else 1,
+                    'start_pos': self._get_start_pos(token) if token else 1,
+                    'end_pos': self._get_end_pos(token) if token else 1,
                     'message': 'Ожидалось ключевое слово case'
                 })
 
@@ -136,16 +143,17 @@ class Parser:
                 self.errors.append({
                     'fragment': token[2],
                     'line': self._get_line(token),
-                    'pos': self._get_pos(token),
+                    'start_pos': self._get_start_pos(token),
+                    'end_pos': self._get_end_pos(token),
                     'message': 'Отсутствие } в конце'
                 })
             else:
+                last_token = self.tokens[-1] if self.tokens else None
                 self.errors.append({
                     'fragment': '',
-                    'line': self._get_line(self.tokens[-1])
-                    if self.tokens else 1,
-                    'pos': self._get_pos(self.tokens[-1])
-                    if self.tokens else 1,
+                    'line': self._get_line(last_token) if last_token else 1,
+                    'start_pos': self._get_start_pos(last_token) if last_token else 1,
+                    'end_pos': self._get_end_pos(last_token) if last_token else 1,
                     'message': 'Отсутствие } в конце'
                 })
             return
@@ -157,16 +165,17 @@ class Parser:
                 self.errors.append({
                     'fragment': token[2],
                     'line': self._get_line(token),
-                    'pos': self._get_pos(token),
+                    'start_pos': self._get_start_pos(token),
+                    'end_pos': self._get_end_pos(token),
                     'message': 'Отсутствие ; после } в конце'
                 })
             else:
+                last_token = self.tokens[-1] if self.tokens else None
                 self.errors.append({
                     'fragment': '',
-                    'line': self._get_line(self.tokens[-1])
-                    if self.tokens else 1,
-                    'pos': self._get_pos(self.tokens[-1])
-                    if self.tokens else 1,
+                    'line': self._get_line(last_token) if last_token else 1,
+                    'start_pos': self._get_start_pos(last_token) if last_token else 1,
+                    'end_pos': self._get_end_pos(last_token) if last_token else 1,
                     'message': 'Отсутствие ; после } в конце'
                 })
 
@@ -188,9 +197,9 @@ class Parser:
                 self.errors.append({
                     'fragment': token[2],
                     'line': self._get_line(token),
-                    'pos': self._get_pos(token),
-                    'message':
-                    'Ожидалось ключевое слово case перед идентификатором'
+                    'start_pos': self._get_start_pos(token),
+                    'end_pos': self._get_end_pos(token),
+                    'message': 'Ожидалось ключевое слово case перед идентификатором'
                 })
                 self.next()  # пропускаем идентификатор
                 # Если есть ;, пропускаем его
@@ -201,7 +210,8 @@ class Parser:
                 self.errors.append({
                     'fragment': token[2],
                     'line': self._get_line(token),
-                    'pos': self._get_pos(token),
+                    'start_pos': self._get_start_pos(token),
+                    'end_pos': self._get_end_pos(token),
                     'message': 'Ожидалось ключевое слово case'
                 })
                 self.next()
@@ -222,7 +232,8 @@ class Parser:
                 self.errors.append({
                     'fragment': token[2],
                     'line': self._get_line(token),
-                    'pos': self._get_pos(token),
+                    'start_pos': self._get_start_pos(token),
+                    'end_pos': self._get_end_pos(token),
                     'message': 'Отсутствие идентификатора после case'
                 })
                 self.irons_recovery(self.follow['Case'])
@@ -235,6 +246,7 @@ class Parser:
                 self.errors.append({
                     'fragment': token[2],
                     'line': self._get_line(token),
-                    'pos': self._get_pos(token),
+                    'start_pos': self._get_start_pos(token),
+                    'end_pos': self._get_end_pos(token),
                     'message': 'Отсутствие ; после идентификатора case'
                 })

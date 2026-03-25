@@ -101,7 +101,7 @@ Button|	Action|	Description|
 
 ## Analyzers
 1. [Lexical analyzer](./docs/en/lexer.md)
-2. Parser
+2. [Syntax analyzer](./docs/en/parser.md)
 
 ## Technical limitations
 

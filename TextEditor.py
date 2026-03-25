@@ -714,41 +714,57 @@ class TextEditor(QMainWindow):
             """
 
     def on_table_click(self, row, col):
-
         table = self.sender()
         if not table:
             return
-        # Получаем позицию из 4-й колонки (индекс 3)
-        position_item = table.item(row, 3)
+        
+        # Определяем колонку с позицией
+        if table.columnCount() == 4:
+            pos_col = 3  # таблица лексем
+        else:
+            pos_col = 1  # таблица ошибок
+        
+        position_item = table.item(row, pos_col)
         if not position_item:
             return
 
-        # Получаем текст позиции (например: "строка 1, 5-9")
         position_text = position_item.text()
         print(position_text)
 
         try:
-            parts = position_text.replace("строка ", "").split(", ")
-            line = int(parts[0])
-
-            positions = parts[1].split("-")
+            # Убираем "строка " в начале
+            position_text = position_text.replace("строка ", "")
+            
+            # Разделяем на строку и позицию
+            # Формат: "4, позиция 1-1" или "1, 5-9"
+            if "позиция" in position_text:
+                # Формат ошибок: "4, позиция 1-1"
+                parts = position_text.split(", позиция ")
+                line = int(parts[0])
+                pos_str = parts[1]  # "1-1"
+            else:
+                # Формат лексем: "1, 5-9"
+                parts = position_text.split(", ")
+                line = int(parts[0])
+                pos_str = parts[1]  # "5-9"
+            
+            # Разделяем начало и конец позиции по дефису
+            positions = pos_str.split("-")
             start_pos = int(positions[0])
             end_pos = int(positions[1])
 
             editor = self.tabWidgetEditor.currentWidget()
             if editor:
-                # Переходим к позиции
                 editor.setCursorPosition(line - 1, start_pos - 1)
                 editor.ensureCursorVisible()
-
-                # Выделяем текст (опционально)
+                
                 from_pos = editor.positionFromLineIndex(line - 1, start_pos - 1)
                 to_pos = editor.positionFromLineIndex(line - 1, end_pos)
                 editor.SendScintilla(editor.SCI_SETSEL, from_pos, to_pos)
 
         except Exception as e:
             print(f"Ошибка перехода: {e}")
-
+            
     def run_program(self):
         editor = self.tabWidgetEditor.currentWidget()
         if not editor:
@@ -764,10 +780,6 @@ class TextEditor(QMainWindow):
         scanner = Scanner()
         scanner_results = scanner.scan(text)
         tokens = scanner_results
-        # Используем Flex лексер
-        # from flex_bison.lexer.lexer_wrapper import FlexLexer
-        # lexer = FlexLexer("./flex_bison/lexer/lexer")
-        # lexer_result = lexer.scan(text)  # ← переименовал
 
         parser = Parser()
         syntax_errors = parser.parse(tokens)
@@ -786,9 +798,10 @@ class TextEditor(QMainWindow):
             headers = ["Code", "Token type", "Lexeme", "Position"]
 
         token_table.setHorizontalHeaderLabels(headers)
-        token_table.setColumnWidth(1, 150)  # Тип лексемы
-        token_table.setColumnWidth(2, 150)  # Лексема
-        token_table.setColumnWidth(3, 150)  # Позиция
+        token_table.setColumnWidth(1, 150)
+        token_table.setColumnWidth(2, 150)
+        token_table.setColumnWidth(3, 150)
+        
         for row, token in enumerate(tokens):
             code = token[0]
             type_name = token[1]
@@ -813,6 +826,7 @@ class TextEditor(QMainWindow):
         tab_name = "Лексемы" if self.current_lang == 'ru' else "Tokens"
         self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(tokens)})")
 
+        # tab 2 errors
         error_table = QTableWidget()
         error_table.setColumnCount(3)
 
@@ -822,18 +836,20 @@ class TextEditor(QMainWindow):
             error_headers = ["Invalid fragment", "Location", "Description"]
 
         error_table.setHorizontalHeaderLabels(error_headers)
+        error_table.setColumnWidth(0, 150)
+        error_table.setColumnWidth(1, 200)
+        error_table.setColumnWidth(2, 300)
 
         if syntax_errors:
             error_table.setRowCount(len(syntax_errors))
             for row, error in enumerate(syntax_errors):
-                error_table.setItem(row, 0,
-                                    QTableWidgetItem(error['fragment']))
-                location = f"строка {error['line']}, позиция {error['pos']}"
+                error_table.setItem(row, 0, QTableWidgetItem(error['fragment']))
+                # ИСПРАВЛЕНО: используем start_pos и end_pos
+                location = f"строка {error['line']}, позиция {error['start_pos']}-{error['end_pos']}"
                 error_table.setItem(row, 1, QTableWidgetItem(location))
                 error_table.setItem(row, 2, QTableWidgetItem(error['message']))
 
-                for col in range(3):
-                    error_table.item(row, col).setBackground(QColor("#FF6B6B"))
+                error_table.item(row, 2).setForeground(QColor("#FF0000"))
         else:
             error_table.setRowCount(1)
             error_table.setColumnCount(1)
@@ -845,14 +861,13 @@ class TextEditor(QMainWindow):
                 success_text = "✅ Syntax is correct"
 
             success_item = QTableWidgetItem(success_text)
-            success_item.setBackground(QColor("#90EE90"))
+            success_item.setForeground(QColor("#90EE90"))
             error_table.setItem(0, 0, success_item)
 
         error_table.setAlternatingRowColors(True)
         error_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         error_table.horizontalHeader().setStretchLastSection(True)
 
-        # Навигация по клику
         error_table.cellClicked.connect(self.on_table_click)
 
         error_tab_name = "Синтаксис" if self.current_lang == 'ru' else "Syntax"
@@ -862,6 +877,5 @@ class TextEditor(QMainWindow):
 
         self.tabWidgetResult.setCurrentIndex(0)
 
-        # Статус
         status_msg = f"Лексем: {len(tokens)}, Ошибок: {error_count}"
         self.statusBar().showMessage(status_msg, 5000)
