@@ -6,7 +6,7 @@ The grammar G[Enum] in BNF notation is defined as follows:
 
 
 <div align="center">
-  <img src="../../screenshots/gramm.png" alt="Grammar Scheme" width="400"/>
+  <img src="../../screenshots/gramm.png" alt="Grammar Scheme" width="600"/>
   <br>
   <em>Figure 1. Schematic representation of the grammar</em>
 </div>
