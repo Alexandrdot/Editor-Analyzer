@@ -103,6 +103,8 @@ Button|	Action|	Description|
 1. [Lexical analyzer](./docs/en/lexer.md)
 2. [Syntax analyzer](./docs/en/parser.md)
 
+## [Regular expressions](./docs/en/regexp.md)
+
 ## Technical limitations
 
 1. Encoding: Only UTF-8 is supported (other encodings may not be displayed correctly)

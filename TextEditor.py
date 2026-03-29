@@ -764,8 +764,108 @@ class TextEditor(QMainWindow):
 
         except Exception as e:
             print(f"Ошибка перехода: {e}")
-            
+
+    def scan_china_index(self, text):
+        import re
+        results = []
+
+        # Регулярное выражение для поиска 6 цифр подряд
+        # \d{6} - ровно 6 цифр
+        
+        # pattern = r'(?<!\d)\d{6}(?!\d)'
+
+        # Регулярное выражение для проверки всех условий
+        # (?=.*[a-z]) - хотя бы одна строчная латиница
+        # (?=.*[A-Z]) - хотя бы одна прописная латиница
+        # (?=.*[а-я]) - хотя бы одна строчная кириллица
+        # (?=.*[А-Я]) - хотя бы одна прописная кириллица
+        # (?=.*\d)    - хотя бы одна цифра
+        # (?=.*[!@#$%^&*()_+\-=\[\]{};:\'",.<>/?\\|`~]) - хотя бы один спецсимвол
+        # .{10,}      - минимум 10 символов
+        
+        # pattern = r'^(?=.*[a-zA-Z])(?=.*[а-яА-Я])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};:\'",.<>/?\\|`~]).{10,}$'
+
+        letters = r'[АВСЕНКМОРТХУ]'
+        # Формат: БУКВА + 3 цифры + 2 буквы + 2-3 цифры региона
+        # (?!0{3}) - номер не может быть 000
+        # (?!0{2,3}) - регион не может быть 00 или 000
+
+        pattern = rf'{letters}(?!0{{3}})\d{{3}}{letters}{{2}}(?!0{{2,3}})\d{{2,3}}'
+
+        for match in re.finditer(pattern, text):
+            start_pos = match.start()
+            substring = match.group()
+
+            # Вычисляем строку и позицию в строке
+            line_num = text.count('\n', 0, start_pos) + 1
+            line_start = text.rfind('\n', 0, start_pos) + 1
+            col_pos = start_pos - line_start + 1
+
+            results.append({
+                'substring': substring,
+                'line': line_num,
+                'start_pos': col_pos,
+                'end_pos': col_pos + len(substring) - 1,
+                'length': len(substring)
+            })
+
+        return results
+
+    def scan_license_plate(self, text):
+        """Поиск гос. номеров с помощью конечного автомата"""
+        import LicensePlateAutomaton
+        automaton = LicensePlateAutomaton.LicensePlateAutomaton()
+        return automaton.scan(text)
+
     def run_program(self):
+        editor = self.tabWidgetEditor.currentWidget()
+        if not editor:
+            QMessageBox.warning(self, "Внимание",
+                                "Нет открытых файлов для анализа")
+            return
+
+        text = editor.text()
+        if not text.strip():
+            QMessageBox.warning(self, "Внимание", "Текст пустой")
+            return
+
+        while self.tabWidgetResult.count() > 0:
+            self.tabWidgetResult.removeTab(0)
+
+        # Поиск рег. выражений
+        # results = self.scan_china_index(text)
+
+        # Поиск гос. номеров
+        results = self.scan_license_plate(text)
+        tokens = results
+        token_table = QTableWidget()
+        token_table.setRowCount(len(tokens))
+        token_table.setColumnCount(3)
+
+        if self.current_lang == 'ru':
+            headers = ["Найденная подстрока", "Позиция", "Длина"]
+        else:
+            headers = ["Найденная подстрока", "Позиция", "Длина"]
+
+        token_table.setHorizontalHeaderLabels(headers)
+        token_table.setColumnWidth(0, 150)
+        token_table.setColumnWidth(1, 150)
+        token_table.setColumnWidth(2, 150)
+
+        for row, token in enumerate(tokens):
+            token_table.setItem(row, 0, QTableWidgetItem(token['substring']))
+            token_table.setItem(row, 1, QTableWidgetItem(f"{token['line']}, {token['start_pos']}-{token['end_pos']}"))
+            token_table.setItem(row, 2, QTableWidgetItem(str(token['length'])))
+
+        token_table.setAlternatingRowColors(True)
+        token_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        token_table.horizontalHeader().setStretchLastSection(True)
+        token_table.cellClicked.connect(self.on_table_click)
+
+        tab_name = "Строки" if self.current_lang == 'ru' else "Strings"
+        self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(tokens)})")
+
+    def run_program_orig(self):
         editor = self.tabWidgetEditor.currentWidget()
         if not editor:
             QMessageBox.warning(self, "Внимание",
