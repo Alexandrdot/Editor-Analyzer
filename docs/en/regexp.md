@@ -12,7 +12,7 @@
 ### Testing
 | Hello123456-_- | ICANT000001GG345678GGVP | Hello12345678ImOK | 12345AABB|
 |--------------|-------------|---| -- |
-| ![Hello123456-_-](./screenshots/rexp1_1.png) | ![ICANT000001GG345678GGVP](./screenshots/rexp1_2.png) | ![Hello12345678ImOK](./screenshots/rexp1_3.png) | ![12345AABB](./screenshots/rexp1_4.png)|
+| ![Hello123456-_-](../../screenshots/rexp1_1.png) | ![ICANT000001GG345678GGVP](../../screenshots/rexp1_2.png) | ![Hello12345678ImOK](../../screenshots/rexp1_3.png) | ![12345AABB](../../screenshots/rexp1_4.png)|
 
 ## The second task is to construct an expression describing the password (a set of lowercase and uppercase Latin and Russian letters, numbers and symbols, at least 10 characters long).
     pattern = r'^(?=.*[a-zA-Z])(?=.*[а-яА-Я])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};:\'",.<>/?\\|`~]).{10,}$'
@@ -36,7 +36,7 @@
 ### Testing
 | Fпривет12. | ZVW51_$$$О444УС54$$$ | ABC | asdfghjk12frgr|
 |--------------|-------------|---|-- |
-| ![Fпривет12.](./screenshots/rexp2_1.png) | ![ZVW51_$$$О444УС54$$$](./screenshots/rexp2_2.png) | ![ABC](./screenshots/rexp2_3.png) | ![asdfghjk12frgr](./screenshots/rexp2_4.png)|
+| ![Fпривет12.](../../screenshots/rexp2_1.png) | ![ZVW51_$$$О444УС54$$$](../../screenshots/rexp2_2.png) | ![ABC](../../screenshots/rexp2_3.png) | ![asdfghjk12frgr](../../screenshots/rexp2_4.png)|
 
 
 
@@ -61,7 +61,7 @@
 ### Testing
 | О444УС54 | АБВР338РХ154АБВ | А000АА154 | А414Л777| О444УУ000 |
 |--------------|-------------|---|-- |-- |
-| ![О444УС54](./screenshots/rexp3_1.png) | ![АБВР338РХ154АБВ](./screenshots/rexp3_2.png) | ![А000АА154](./screenshots/rexp3_3.png) | ![А414Л777](./screenshots/rexp3_4.png)| ![О444УУ000](./screenshots/rexp3_5.png)|
+| ![О444УС54](../../screenshots/rexp3_1.png) | ![АБВР338РХ154АБВ](../../screenshots/rexp3_2.png) | ![А000АА154](../../screenshots/rexp3_3.png) | ![А414Л777](../../screenshots/rexp3_4.png)| ![О444УУ000](../../screenshots/rexp3_5.png)|
 
 
 ## Additional task: For problem 3, it is necessary to implement an algorithm for searching substrings in the text by going to the graph of the automaton.
