@@ -817,7 +817,7 @@ class TextEditor(QMainWindow):
         automaton = LicensePlateAutomaton.LicensePlateAutomaton()
         return automaton.scan(text)
 
-    def run_program(self):
+    def run_program_porn(self):
         editor = self.tabWidgetEditor.currentWidget()
         if not editor:
             QMessageBox.warning(self, "Внимание",
@@ -865,7 +865,7 @@ class TextEditor(QMainWindow):
         tab_name = "Строки" if self.current_lang == 'ru' else "Strings"
         self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(tokens)})")
 
-    def run_program_orig(self):
+    def run_program(self):
         editor = self.tabWidgetEditor.currentWidget()
         if not editor:
             QMessageBox.warning(self, "Внимание",
