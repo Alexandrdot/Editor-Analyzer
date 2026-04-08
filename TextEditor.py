@@ -817,7 +817,7 @@ class TextEditor(QMainWindow):
         automaton = LicensePlateAutomaton.LicensePlateAutomaton()
         return automaton.scan(text)
 
-    def run_program_porn(self):
+    def run_program_p(self):
         editor = self.tabWidgetEditor.currentWidget()
         if not editor:
             QMessageBox.warning(self, "Внимание",
