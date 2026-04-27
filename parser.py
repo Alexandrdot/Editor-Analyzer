@@ -1,252 +1,222 @@
+﻿from dataclasses import dataclass
+import re
+from typing import List, Optional
+
+
+@dataclass
+class Token:
+    code: int
+    lexeme: str
+    line: int
+    start: int
+    end: int
+    raw_position: str
+
+
 class Parser:
-    def __init__(self):
-        self.tokens = []
+    def __init__(self, scanner_tokens: List[list]):
+        self.syntax_errors: List[dict] = []
+        self.tokens: List[Token] = []
         self.pos = 0
-        self.errors = []
-        self.current_token = None
+        self.last_consumed: Optional[Token] = None
+        self.last_line = 1
+        self.terminal_missing_case_identifier = False
+        self._prepare_tokens(scanner_tokens)
 
-        # FOLLOW множества для метода Айронса
-        self.follow = {
-            'EnumDecl': {1, None},
-            'EnumBody': {1, None},
-            'CaseList': {6},
-            'Case': {2, 6},
-            'Identifier': {4, 5, 6, 2, 1}
-        }
+    def parse(self) -> List[dict]:
+        self._parse_enum_declaration()
+        return self.syntax_errors
 
-    def parse(self, tokens):
-        self.tokens = tokens
-        self.pos = 0
-        self.errors = []
+    def _prepare_tokens(self, scanner_tokens: List[list]) -> None:
+        for token in scanner_tokens:
+            code, _, lexeme, position = token
+            if code == 7 or code == "ERROR":
+                continue
 
-        if not tokens:
-            self.errors.append({
-                'fragment': '',
-                'line': 1,
-                'start_pos': 1,
-                'end_pos': 1,
-                'message': 'Пустой входной текст'
-            })
-            return self.errors
+            line, start, end = self._parse_position(position)
+            self.tokens.append(
+                Token(
+                    code=int(code),
+                    lexeme=lexeme,
+                    line=line,
+                    start=start,
+                    end=end,
+                    raw_position=position,
+                )
+            )
+            self.last_line = line
 
-        while self.current():
-            self.enum_decl()
+    def _parse_position(self, position: str) -> tuple[int, int, int]:
+        # format: "СЃС‚СЂРѕРєР° 2, 5-9" (locale-independent by parsing digits)
+        nums = re.findall(r"\d+", position)
+        if len(nums) >= 3:
+            return int(nums[0]), int(nums[1]), int(nums[2])
+        raise ValueError(f"Invalid token position: {position}")
 
-        return self.errors
+    def _current(self) -> Optional[Token]:
+        if self.pos >= len(self.tokens):
+            return None
+        return self.tokens[self.pos]
 
-    def _get_line(self, token):
-        return int(token[3].replace('строка ', '').split(',')[0])
+    def _at_end(self) -> bool:
+        return self._current() is None
 
-    def _get_start_pos(self, token):
-        return int(token[3].split(',')[1].strip().split('-')[0])
+    def _check(self, code: int) -> bool:
+        current = self._current()
+        return current is not None and current.code == code
 
-    def _get_end_pos(self, token):
-        return int(token[3].split(',')[1].strip().split('-')[1])
-
-    def current(self):
-        while self.pos < len(self.tokens):
-            token = self.tokens[self.pos]
-            if token[0] != 7:
-                self.current_token = token
-                return self.current_token
+    def _advance(self) -> Optional[Token]:
+        current = self._current()
+        if current is not None:
             self.pos += 1
-        self.current_token = None
-        return None
+            self.last_consumed = current
+        return current
 
-    def next(self):
-        self.pos += 1
-        return self.current()
-
-    def match(self, expected_code):
-        token = self.current()
-        if not token:
-            return False
-
-        if token[0] == expected_code:
-            self.next()
+    def _consume(self, code: int) -> bool:
+        if self._check(code):
+            self._advance()
             return True
         return False
 
-    def irons_recovery(self, follow_set):
-        if not follow_set:
-            return
-        while self.current():
-            if self.current()[0] in follow_set:
-                return
-            self.next()
+    def _error_location(self, prefer_eof_on_newline: bool = True) -> tuple[str, str]:
+        current = self._current()
 
-    def enum_decl(self):
-        """<EnumDecl> → enum <Identifier> { <CaseList> } ;"""
+        if current is None:
+            return self._eof_fragment_and_position()
 
-        has_case = False
+        if (
+            prefer_eof_on_newline
+            and self.last_consumed is not None
+            and current.line > self.last_consumed.line
+        ):
+            return self._eof_fragment_and_position()
 
-        # 1. Ожидаем 'enum'
-        if not self.match(1):
-            token = self.current()
-            if token:
-                self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'start_pos': self._get_start_pos(token),
-                    'end_pos': self._get_end_pos(token),
-                    'message': 'Ожидалось ключевое слово enum'
-                })
-                self.irons_recovery(self.follow['EnumDecl'])
-                return
+        return current.lexeme, current.raw_position
 
-        # 2. Ожидаем идентификатор (имя enum)
-        if not self.match(3):
-            token = self.current()
-            if token:
-                self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'start_pos': self._get_start_pos(token),
-                    'end_pos': self._get_end_pos(token),
-                    'message': 'Отсутствие идентификатора после enum'
-                })
-                self.irons_recovery(self.follow['Identifier'])
+    def _eof_fragment_and_position(self) -> tuple[str, str]:
+        if self.last_consumed is not None:
+            return "EOF", f"Строка {self.last_consumed.line}, EOF"
+        return "EOF", f"Строка {self.last_line}, EOF"
 
-        # 3. Ожидаем '{'
-        if not self.match(5):
-            token = self.current()
-            if token:
-                self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'start_pos': self._get_start_pos(token),
-                    'end_pos': self._get_end_pos(token),
-                    'message': 'Отсутствие { после идентификатора enum'
-                })
-                self.irons_recovery(self.follow['EnumBody'])
-                return
+    def _add_error(self, expected: str, prefer_eof_on_newline: bool = True) -> None:
+        fragment, position = self._error_location(
+            prefer_eof_on_newline=prefer_eof_on_newline
+        )
+        self.syntax_errors.append(
+            {
+                "fragment": fragment,
+                "description": f"Ожидалось {expected}",
+                "position": position,
+            }
+        )
 
-        # 4. Разбираем список case
-        has_case = self.case_list()
+    def _expect(self, code: int, expected: str) -> bool:
+        if self._consume(code):
+            return True
 
-        # 5. Проверяем, что был хотя бы один case
-        if not has_case:
-            token = self.current()
-            if token:
-                self.errors.append({
-                    'fragment': token[2] if token else '',
-                    'line': self._get_line(token) if token else 1,
-                    'start_pos': self._get_start_pos(token) if token else 1,
-                    'end_pos': self._get_end_pos(token) if token else 1,
-                    'message': 'Ожидалось ключевое слово case'
-                })
+        self._add_error(expected, prefer_eof_on_newline=True)
+        return False
 
-        # 6. Ожидаем '}'
-        if not self.match(6):
-            token = self.current()
-            if token:
-                self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'start_pos': self._get_start_pos(token),
-                    'end_pos': self._get_end_pos(token),
-                    'message': 'Отсутствие } в конце'
-                })
+    def _is_cascade_after_missing_case_identifier(self) -> bool:
+        if not self.syntax_errors:
+            return False
+        last_error = self.syntax_errors[-1]
+        if last_error.get("fragment") != "EOF":
+            return False
+        return "Ожидалось идентификатор" in last_error.get("description", "")
+
+    def _parse_enum_declaration(self) -> None:
+        # enum IDENT { CaseDecl+ } ;
+        if not self._expect(1, "ключевое слово enum"):
+            if self._check(3) and (self.pos + 1) < len(self.tokens):
+                self._advance()
             else:
-                last_token = self.tokens[-1] if self.tokens else None
-                self.errors.append({
-                    'fragment': '',
-                    'line': self._get_line(last_token) if last_token else 1,
-                    'start_pos': self._get_start_pos(last_token) if last_token else 1,
-                    'end_pos': self._get_end_pos(last_token) if last_token else 1,
-                    'message': 'Отсутствие } в конце'
-                })
+                return
+
+        ident_ok = self._expect(3, "идентификатор")
+        # Если после enum нет идентификатора и сразу не начинается блок,
+        # это фатальная ошибка верхнего уровня (без каскада).
+        if not ident_ok and not self._check(5):
             return
 
-        # 7. Ожидаем ';' после } (обязательно!)
-        if not self.match(4):
-            token = self.current()
-            if token:
-                self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'start_pos': self._get_start_pos(token),
-                    'end_pos': self._get_end_pos(token),
-                    'message': 'Отсутствие ; после } в конце'
-                })
-            else:
-                last_token = self.tokens[-1] if self.tokens else None
-                self.errors.append({
-                    'fragment': '',
-                    'line': self._get_line(last_token) if last_token else 1,
-                    'start_pos': self._get_start_pos(last_token) if last_token else 1,
-                    'end_pos': self._get_end_pos(last_token) if last_token else 1,
-                    'message': 'Отсутствие ; после } в конце'
-                })
-
-    def case_list(self):
-        """<CaseList> → <Case> | <Case> <CaseList>
-           Возвращает True если был хотя бы один case"""
-        has_case = False
-        while self.current():
-            token = self.current()
-
-            if token[0] == 6:  # }
-                break
-
-            if token[0] == 2:  # case
-                self.case_item()
-                has_case = True
-            elif token[0] == 3:  # identifier без case
-                # Идентификатор без case - ошибка
-                self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'start_pos': self._get_start_pos(token),
-                    'end_pos': self._get_end_pos(token),
-                    'message': 'Ожидалось ключевое слово case перед идентификатором'
-                })
-                self.next()  # пропускаем идентификатор
-                # Если есть ;, пропускаем его
-                if self.current() and self.current()[0] == 4:
-                    self.next()
-            else:
-                # Другой токен - ошибка
-                self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'start_pos': self._get_start_pos(token),
-                    'end_pos': self._get_end_pos(token),
-                    'message': 'Ожидалось ключевое слово case'
-                })
-                self.next()
-
-        return has_case
-
-    def case_item(self):
-        """<Case> → case <Identifier> ;"""
-
-        # 1. Пропускаем 'case'
-        if not self.match(2):
+        has_open_brace = self._expect(5, "{")
+        if not has_open_brace:
             return
 
-        # 2. Ожидаем идентификатор
-        if not self.match(3):
-            token = self.current()
-            if token:
-                self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'start_pos': self._get_start_pos(token),
-                    'end_pos': self._get_end_pos(token),
-                    'message': 'Отсутствие идентификатора после case'
-                })
-                self.irons_recovery(self.follow['Case'])
+        block_start_pos = self.pos
+        has_case = self._parse_case_list()
+        consumed_inside_block = self.pos > block_start_pos
+
+        if has_open_brace:
+            if self._at_end():
+                if (
+                    has_case or consumed_inside_block
+                ) and not self.terminal_missing_case_identifier:
+                    self._add_error("}")
                 return
 
-        # 3. Ожидаем ';'
-        if not self.match(4):
-            token = self.current()
-            if token:
-                self.errors.append({
-                    'fragment': token[2],
-                    'line': self._get_line(token),
-                    'start_pos': self._get_start_pos(token),
-                    'end_pos': self._get_end_pos(token),
-                    'message': 'Отсутствие ; после идентификатора case'
-                })
+            self._expect(6, "}")
+            self._expect(4, ";")
+            return
+
+    def _parse_case_list(self) -> bool:
+        # CaseDecl+
+        if not self._check(2):
+            self._recover_missing_case_decl()
+            self._parse_case_list_tail()
+            return False
+
+        self._parse_case_decl()
+        self._parse_case_list_tail()
+        return True
+
+    def _parse_case_list_tail(self) -> None:
+        if self._at_end() or self._check(6):
+            return
+
+
+        # Лишняя ';' внутри блока: дальше внешний уровень сообщит про ожидаемую '}'.
+        if self._check(4):
+            return
+
+        if self._check(2):
+            self._parse_case_decl()
+            self._parse_case_list_tail()
+            return
+
+        self._recover_missing_case_decl()
+        self._parse_case_list_tail()
+
+    def _recover_missing_case_decl(self) -> None:
+        # Восстановление для записи вида "ident ;" без ключевого слова case.
+        self._add_error("Ожидалось ключевое case", prefer_eof_on_newline=False)
+        if self._check(3):
+            self._advance()
+            self._expect(4, ";")
+            return
+        self._skip_to_case_boundary()
+
+    def _skip_to_case_boundary(self) -> None:
+        # Пропускаем мусор до начала следующего case, закрывающей скобки
+        # или конца текущего проблемного объявления.
+        while not self._at_end():
+            if self._check(2) or self._check(6):
+                return
+            if self._check(4):
+                self._advance()
+                return
+            self._advance()
+
+    def _parse_case_decl(self) -> None:
+        self._expect(2, "ключевое слово case")
+        ident_ok = self._expect(3, "идентификатор")
+
+        # Если идентификатор пропущен, не добавляем каскадную ошибку про ';',
+        # но при наличии ';' потребляем его для восстановления.
+        if not ident_ok:
+            if self._at_end():
+                self.terminal_missing_case_identifier = True
+            self._consume(4)
+            return
+
+        self._expect(4, ";")

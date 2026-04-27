@@ -16,9 +16,9 @@ class Scanner:
                 start = i + 1
 
                 # Пробелы и табуляцию - сохраняем как один токен
-                if char in [' ', '\t']:
+                if char in [' ', '\t', '\r']:
                     space_count = 0
-                    while i < length and line[i] in [' ', '\t']:
+                    while i < length and line[i] in [' ', '\t', '\r']:
                         space_count += 1
                         i += 1
                     results.append([
@@ -28,10 +28,6 @@ class Scanner:
                         f"строка {line_num}, {start}-{i}"  # позиция пробелов
                     ])
                     continue
-
-                # Комментарии // - пропускаем всю строку
-                if char == '/' and i + 1 < length and line[i + 1] == '/':
-                    break
 
                 # Одиночные символы (; { })
                 if char in SYMBOLS:
@@ -104,9 +100,7 @@ class Scanner:
                         current_char in [' ', '\t'] or
                         current_char in SYMBOLS or
                         current_char.isalpha() or
-                        current_char == '_' or
-                        (current_char == '/' and i + 1 < length
-                         and line[i + 1] == '/')
+                        current_char == '_'
                     )
 
                     if is_valid:

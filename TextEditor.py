@@ -1,8 +1,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QMenuBar, QFileDialog,
                              QMessageBox, QLabel, QTableWidget,
                              QTableWidgetItem)
-from PyQt6.Qsci import (QsciScintilla, QsciLexerPython, QsciLexerCPP,
-                        QsciLexerJava, QsciLexerHTML, QsciLexerJavaScript)
+from PyQt6.Qsci import (QsciScintilla, QsciLexerJavaScript)
 from PyQt6.QtGui import QAction, QColor, QDesktopServices
 from PyQt6.QtCore import QUrl
 from PyQt6.uic import loadUi
@@ -22,8 +21,19 @@ def resource_path(relative_path):
 
 
 class SimpleCodeEditor(QsciScintilla):
-    def __init__(self, language="python"):
+    def __init__(self, language="swift"):
         super().__init__()
+
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+                color: #d4d4d4;
+            }
+            QTextEdit, QPlainTextEdit {
+                background-color: #1e1e1e;
+                color: #d4d4d4;
+            }
+        """)
 
         # Нумерация строк
         self.setMarginType(0, QsciScintilla.MarginType.NumberMargin)
@@ -35,11 +45,7 @@ class SimpleCodeEditor(QsciScintilla):
 
     def set_lexer(self, language):
         lexers = {
-            "python": QsciLexerPython,
-            "cpp": QsciLexerCPP,
-            "java": QsciLexerJava,
-            "html": QsciLexerHTML,
-            "javascript": QsciLexerJavaScript,
+            "swift": QsciLexerJavaScript,
         }
 
         if language in lexers:
@@ -48,20 +54,11 @@ class SimpleCodeEditor(QsciScintilla):
             lexer.setPaper(QColor("#1e1e1e"))
             lexer.setDefaultColor(QColor("#d4d4d4"))
 
-            if language == "python":
-                lexer.setColor(QColor("#569CD6"), QsciLexerPython.Keyword)
-                lexer.setColor(QColor("#4EC9B0"), QsciLexerPython.ClassName)
-                lexer.setColor(QColor("#DCDCAA"), QsciLexerPython.FunctionMethodName)
-                lexer.setColor(QColor("#9CDCFE"), QsciLexerPython.Number)
-                lexer.setColor(QColor("#6A9955"), QsciLexerPython.Comment)
-                lexer.setColor(QColor("#D4D4D4"), QsciLexerPython.Operator)
-                lexer.setColor(QColor("#DCDCAA"), QsciLexerPython.Decorator)
-
-            elif language in ["cpp", "java", "javascript"]:
-                lexer.setColor(QColor("#FF69B4"), 5)
-                lexer.setColor(QColor("#CE9178"), 6)
-                lexer.setColor(QColor("#6A9955"), 8)
-                lexer.setColor(QColor("#FFFFFF"), 10)
+            lexer.setColor(QColor("#FFFFFF"), 10)
+            lexer.setColor(QColor("#FF69B4"), 5)
+            lexer.setColor(QColor("#CE9178"), 6)
+            lexer.setColor(QColor("#6A9955"), 8)
+            lexer.setColor(QColor("#FFFFFF"), 10)
 
             self.setLexer(lexer)
 
@@ -136,12 +133,11 @@ class TextEditor(QMainWindow):
 
         self.tabWidgetEditor.setTabsClosable(True)
         self.tabWidgetEditor.tabCloseRequested.connect(self.close_tab)
-        
+
         self.tabWidgetResult.setTabsClosable(True)
-        #self.tabWidgetResult.tabCloseRequested.connect(self.close_tab)
 
         self.setAcceptDrops(True)
-        
+
         self.file_paths = {}
 
         self.label_texteditor.linkActivated.connect(self.open_link)
@@ -224,56 +220,147 @@ class TextEditor(QMainWindow):
         if self.run:
             self.run.triggered.connect(self.run_program)
 
+        # Text
+        self.stateDiagram = self.findChild(QAction, 'state_diagram')
+        if self.stateDiagram:
+            self.stateDiagram.triggered.connect(lambda: self.open_info_html('state_diagram.html'))
+
+        self.problemStatement = self.findChild(QAction, 'problem_statement')
+        if self.problemStatement:
+            self.problemStatement.triggered.connect(lambda: self.open_info_html('problem_statement.html'))
+
+        self.textExemple = self.findChild(QAction, 'text_example')
+        if self.textExemple:
+            self.textExemple.triggered.connect(self.text_exemple)
+
+        self.sourceCode = self.findChild(QAction, 'source_code')
+        if self.sourceCode:
+            self.sourceCode.triggered.connect(lambda: self.open_info_html('source_code.html'))
+
+        self.listOfReferences = self.findChild(QAction, 'list_of_references')
+        if self.listOfReferences:
+            self.listOfReferences.triggered.connect(lambda: self.open_info_html('list_of_references.html'))
+
+        self.grammar = self.findChild(QAction, 'grammar')
+        if self.grammar:
+            self.grammar.triggered.connect(lambda: self.open_info_html('grammar.html'))
+
+        self.classGrammar = self.findChild(QAction, 'class_grammar')
+        if self.classGrammar:
+            self.classGrammar.triggered.connect(lambda: self.open_info_html('class_grammar.html'))
+
+        self.methodAnalyzes = self.findChild(QAction, 'method_analyzes')
+        if self.methodAnalyzes:
+            self.methodAnalyzes.triggered.connect(lambda: self.open_info_html('method_analyzes.html'))
+
+        self.diagnostic = self.findChild(QAction, 'diagnostic')
+        if self.diagnostic:
+            self.diagnostic.triggered.connect(lambda: self.open_info_html('diagnostic.html'))
+
+        # Settings
+        self.changeLang = self.findChild(QAction, 'change_lang')
+        if self.changeLang:
+            self.changeLang.triggered.connect(self.translate_text)
+
+        self.highText = self.findChild(QAction, 'high_text')
+        if self.highText:
+            self.highText.triggered.connect(self.zoom_in)
+
+        self.lowText = self.findChild(QAction, 'low_text')
+        if self.lowText:
+            self.lowText.triggered.connect(self.zoom_out)
+
+    def open_info_html(self, filename):
+        base_dir = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        info_dir = os.path.join(base_dir, 'tab_text')
+        file_path = os.path.join(info_dir, filename)
+
+        QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
+
+    def text_exemple(self):
+        """Добавляет текстовый пример в редактор"""
+
+        # Пример текста для вставки
+        example_text = """enum Day {
+        case monday;
+        case tuesday;
+        case wednesday;
+        case thursday;
+        case friday;
+        case saturday;
+        case sunday;
+        };"""
+
+        # Получаем текущий редактор
+        editor = self.tabWidgetEditor.currentWidget()
+
+        if editor:
+            current_text = editor.text()
+
+            # Если редактор пустой или пользователь хочет добавить пример
+            if not current_text.strip():
+                editor.setText(example_text)
+            else:
+                new_text = current_text.rstrip() + "\n\n" + example_text
+                editor.setText(new_text)
+
+            editor.setModified(True)
+            self.statusBar().showMessage("Текстовый пример добавлен", 3000)
+        else:
+            # Нет открытых вкладок - создаем новую с примером
+            self.create_new_tab("Пример enum", example_text)
+            self.statusBar().showMessage("Создана новая вкладка с примером", 3000)
+
     def close_program(self):
-        # Проверяем все открытые вкладки
+        """Возвращает True если можно закрыть, False если отменено"""
         unsaved_tabs = []
         for i in range(self.tabWidgetEditor.count()):
             widget = self.tabWidgetEditor.widget(i)
             if widget.isModified():
                 unsaved_tabs.append(i)
 
-        if unsaved_tabs:
-            reply = QMessageBox.question(
-                self,
-                "Несохраненные изменения",
-                f"Есть несохраненные изменения в {len(
-                    unsaved_tabs)} файле(ах).\n"
-                "Сохранить все перед выходом?",
-                QMessageBox.StandardButton.Yes |
-                QMessageBox.StandardButton.No |
-                QMessageBox.StandardButton.Cancel
-            )
+        if not unsaved_tabs:
+            return True  # Нет несохраненных файлов
 
-            if reply == QMessageBox.StandardButton.Yes:
-                # Сохраняем все измененные файлы
-                for i in unsaved_tabs:
-                    self.tabWidgetEditor.setCurrentIndex(i)
-                    result = self.save_file()
-                    if result == "cancelled":
-                        cont = QMessageBox.question(
-                            self,
-                            "Сохранение отменено",
-                            "Вы отменили сохранение. Продолжить выход?",
-                            QMessageBox.StandardButton.Yes |
-                            QMessageBox.StandardButton.No
-                        )
-                        if cont == QMessageBox.StandardButton.No:
-                            return
+        reply = QMessageBox.question(
+            self,
+            "Несохраненные изменения",
+            f"Есть несохраненные изменения в {len(unsaved_tabs)} файле(ах).\n"
+            "Сохранить все перед выходом?",
+            QMessageBox.StandardButton.Yes |
+            QMessageBox.StandardButton.No |
+            QMessageBox.StandardButton.Cancel
+        )
 
-                    elif result == "error":
-                        cont = QMessageBox.question(
-                            self,
-                            "Ошибка сохранения",
-                            "Не удалось сохранить файл. Продолжить выход?",
-                            QMessageBox.StandardButton.Yes |
-                            QMessageBox.StandardButton.No
-                        )
-                        if cont == QMessageBox.StandardButton.No:
-                            return
-
-            elif reply == QMessageBox.StandardButton.Cancel:
-                return
-        self.close()
+        if reply == QMessageBox.StandardButton.Yes:
+            for i in unsaved_tabs:
+                self.tabWidgetEditor.setCurrentIndex(i)
+                result = self.save_file()
+                if result == "cancelled":
+                    cont = QMessageBox.question(
+                        self,
+                        "Сохранение отменено",
+                        "Вы отменили сохранение. Продолжить выход?",
+                        QMessageBox.StandardButton.Yes |
+                        QMessageBox.StandardButton.No
+                    )
+                    if cont == QMessageBox.StandardButton.No:
+                        return False
+                elif result == "error":
+                    cont = QMessageBox.question(
+                        self,
+                        "Ошибка сохранения",
+                        "Не удалось сохранить файл. Продолжить выход?",
+                        QMessageBox.StandardButton.Yes |
+                        QMessageBox.StandardButton.No
+                    )
+                    if cont == QMessageBox.StandardButton.No:
+                        return False
+            return True
+        elif reply == QMessageBox.StandardButton.No:
+            return True
+        else:  # Cancel
+            return False
 
     def close_tab(self, index):
         widget = self.tabWidgetEditor.widget(index)
@@ -327,12 +414,8 @@ class TextEditor(QMainWindow):
 
     def create_new_tab(self, title="Новый документ", content="",
                        file_path=None):
-        language = "python"  # по умолчанию
-        if file_path:
-            lang = self.get_language_from_filename(file_path)
-            if lang:
-                language = lang
-        text_edit = SimpleCodeEditor(language)
+
+        text_edit = SimpleCodeEditor("swift")
         text_edit.setText(content)
 
         index = self.tabWidgetEditor.addTab(text_edit, title)
@@ -344,21 +427,6 @@ class TextEditor(QMainWindow):
         self.tabWidgetEditor.setCurrentIndex(index)
 
         return text_edit
-
-    def get_language_from_filename(self, filename):
-        ext = os.path.splitext(filename)[1].lower()
-
-        language_map = {
-            '.py': 'python',
-            '.cpp': 'cpp', '.cxx': 'cpp', '.cc': 'cpp', '.h': 'cpp',
-            '.hpp': 'cpp',
-            '.java': 'java',
-            '.html': 'html', '.htm': 'html',
-            '.js': 'javascript',
-            '.swift': 'javascript',
-            '.txt': None,
-        }
-        return language_map.get(ext, None)
 
     def new_file(self):
         self.create_new_tab()
@@ -494,12 +562,26 @@ class TextEditor(QMainWindow):
         msg_box.exec()
 
     def closeEvent(self, event):
-        self.close_program()
-        event.accept()
+        if self.close_program():
+            event.accept()  # Разрешаем закрытие
+        else:
+            event.ignore()  # Запрещаем закрытие
 
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
+    def zoom_in(self):
+        editor = self.tabWidgetEditor.currentWidget()
+        if editor:
+            editor.zoomIn(1)
+            font = editor.font()
+            self.statusBar().showMessage(f"Масштаб: {font.pointSize()} pt", 1500)
+
+    def zoom_out(self):
+        editor = self.tabWidgetEditor.currentWidget()
+        if editor:
+            editor.zoomOut(1)
+            font = editor.font()
+            self.statusBar().showMessage(f"Масштаб: {font.pointSize()} pt", 1500)
+
+
 
     def dropEvent(self, event):
         for url in event.mimeData().urls():
@@ -509,6 +591,8 @@ class TextEditor(QMainWindow):
 
     def open_file_path(self, file_path):
         try:
+            if "EOF" in position_text:
+                return
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             self.create_new_tab(
@@ -517,15 +601,14 @@ class TextEditor(QMainWindow):
             QMessageBox.critical(self, "Ошибка", str(e))
 
     def translate_text(self):
-        # Переключаем язык
         if self.current_lang == 'ru':
             self.set_english()
             self.current_lang = 'en'
-            self.statusBar().showMessage(self.tr('lang_switched'), 3000)
         else:
             self.set_russian()
             self.current_lang = 'ru'
-            self.statusBar().showMessage(self.tr('lang_switched'), 3000)
+
+        self.statusBar().showMessage(self.tr('lang_switched'), 3000)
 
     def set_russian(self):
         # Меню Файл
@@ -544,6 +627,21 @@ class TextEditor(QMainWindow):
         self.deleteText.setText("Удалить")
         self.selectAllText.setText("Выделить всё")
 
+        self.run.setText("Пуск")
+
+        # Text menu
+        self.stateDiagram.setText("Диаграмма состояний")
+        self.problemStatement.setText("Постановка задачи")
+        self.textExemple.setText("Текстовый пример")
+        self.sourceCode.setText("Исходный код")
+        self.listOfReferences.setText("Список литературы")
+
+        self.grammar.setText("Грамматика")
+        self.classGrammar.setText("Классификация грамматики")
+        self.methodAnalyzes.setText("Метод анализа")
+        self.diagnostic.setText("Диагностика и нейтрализация ошибок")
+
+
         # Меню Инфо
         self.aboutProgram.setText("О программе")
         self.infoDoc.setText("Руководство")
@@ -555,12 +653,20 @@ class TextEditor(QMainWindow):
         actions[2].setText("Текст")
         actions[3].setText("Пуск")
         actions[4].setText("Справка")
+        actions[5].setText("Настройки")
 
         self.label_texteditor.setText("Текстовой редактор:")
         self.label_result.setText("Результаты:")
 
         self.update_tab_titles('ru')
         self.update_dialog_texts('ru')
+
+        if self.changeLang:
+            self.changeLang.setText("Изменить язык на English")
+        if self.highText:
+            self.highText.setText("Увеличить текст")
+        if self.lowText:
+            self.lowText.setText("Уменьшить текст")
 
     def set_english(self):
         # File menu
@@ -579,6 +685,20 @@ class TextEditor(QMainWindow):
         self.deleteText.setText("Delete")
         self.selectAllText.setText("Select All")
 
+        self.run.setText("Run")
+
+        # Text menu
+        self.stateDiagram.setText("State Diagram")
+        self.problemStatement.setText("Problem Statement")
+        self.textExemple.setText("Text Example")
+        self.sourceCode.setText("Source Code")
+        self.listOfReferences.setText("References")
+
+        self.grammar.setText("Grammar")
+        self.classGrammar.setText("Classification of Grammar")
+        self.methodAnalyzes.setText("Analysis Method")
+        self.diagnostic.setText("Error Diagnosis and Neutralization")
+
         # Info menu
         self.aboutProgram.setText("About")
         self.infoDoc.setText("Help")
@@ -590,12 +710,21 @@ class TextEditor(QMainWindow):
         actions[2].setText("Text")
         actions[3].setText("Play")
         actions[4].setText("Info")
+        actions[5].setText("Settings")
 
         self.label_texteditor.setText("Text Editor:")
         self.label_result.setText("Results:")
 
         self.update_tab_titles('en')
         self.update_dialog_texts('en')
+
+
+        if self.changeLang:
+            self.changeLang.setText("Change lang RU")
+        if self.highText:
+            self.highText.setText("Increase text")
+        if self.lowText:
+            self.lowText.setText("Decrease text")
 
     def get_token_type_ru(self, code, type_name, lexeme):
         if code in [1, 2]:  # enum, case
@@ -717,13 +846,10 @@ class TextEditor(QMainWindow):
         table = self.sender()
         if not table:
             return
-        
+
         # Определяем колонку с позицией
-        if table.columnCount() == 4:
-            pos_col = 3  # таблица лексем
-        else:
-            pos_col = 1  # таблица ошибок
-        
+        pos_col = table.columnCount() - 1
+
         position_item = table.item(row, pos_col)
         if not position_item:
             return
@@ -734,7 +860,7 @@ class TextEditor(QMainWindow):
         try:
             # Убираем "строка " в начале
             position_text = position_text.replace("строка ", "")
-            
+
             # Разделяем на строку и позицию
             # Формат: "4, позиция 1-1" или "1, 5-9"
             if "позиция" in position_text:
@@ -747,7 +873,7 @@ class TextEditor(QMainWindow):
                 parts = position_text.split(", ")
                 line = int(parts[0])
                 pos_str = parts[1]  # "5-9"
-            
+
             # Разделяем начало и конец позиции по дефису
             positions = pos_str.split("-")
             start_pos = int(positions[0])
@@ -757,113 +883,13 @@ class TextEditor(QMainWindow):
             if editor:
                 editor.setCursorPosition(line - 1, start_pos - 1)
                 editor.ensureCursorVisible()
-                
+
                 from_pos = editor.positionFromLineIndex(line - 1, start_pos - 1)
                 to_pos = editor.positionFromLineIndex(line - 1, end_pos)
                 editor.SendScintilla(editor.SCI_SETSEL, from_pos, to_pos)
 
         except Exception as e:
             print(f"Ошибка перехода: {e}")
-
-    def scan_china_index(self, text):
-        import re
-        results = []
-
-        # Регулярное выражение для поиска 6 цифр подряд
-        # \d{6} - ровно 6 цифр
-        
-        # pattern = r'(?<!\d)\d{6}(?!\d)'
-
-        # Регулярное выражение для проверки всех условий
-        # (?=.*[a-z]) - хотя бы одна строчная латиница
-        # (?=.*[A-Z]) - хотя бы одна прописная латиница
-        # (?=.*[а-я]) - хотя бы одна строчная кириллица
-        # (?=.*[А-Я]) - хотя бы одна прописная кириллица
-        # (?=.*\d)    - хотя бы одна цифра
-        # (?=.*[!@#$%^&*()_+\-=\[\]{};:\'",.<>/?\\|`~]) - хотя бы один спецсимвол
-        # .{10,}      - минимум 10 символов
-        
-        # pattern = r'^(?=.*[a-zA-Z])(?=.*[а-яА-Я])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};:\'",.<>/?\\|`~]).{10,}$'
-
-        letters = r'[АВСЕНКМОРТХУ]'
-        # Формат: БУКВА + 3 цифры + 2 буквы + 2-3 цифры региона
-        # (?!0{3}) - номер не может быть 000
-        # (?!0{2,3}) - регион не может быть 00 или 000
-
-        pattern = rf'{letters}(?!0{{3}})\d{{3}}{letters}{{2}}(?!0{{2,3}})\d{{2,3}}'
-
-        for match in re.finditer(pattern, text):
-            start_pos = match.start()
-            substring = match.group()
-
-            # Вычисляем строку и позицию в строке
-            line_num = text.count('\n', 0, start_pos) + 1
-            line_start = text.rfind('\n', 0, start_pos) + 1
-            col_pos = start_pos - line_start + 1
-
-            results.append({
-                'substring': substring,
-                'line': line_num,
-                'start_pos': col_pos,
-                'end_pos': col_pos + len(substring) - 1,
-                'length': len(substring)
-            })
-
-        return results
-
-    def scan_license_plate(self, text):
-        """Поиск гос. номеров с помощью конечного автомата"""
-        import LicensePlateAutomaton
-        automaton = LicensePlateAutomaton.LicensePlateAutomaton()
-        return automaton.scan(text)
-
-    def run_program_p(self):
-        editor = self.tabWidgetEditor.currentWidget()
-        if not editor:
-            QMessageBox.warning(self, "Внимание",
-                                "Нет открытых файлов для анализа")
-            return
-
-        text = editor.text()
-        if not text.strip():
-            QMessageBox.warning(self, "Внимание", "Текст пустой")
-            return
-
-        while self.tabWidgetResult.count() > 0:
-            self.tabWidgetResult.removeTab(0)
-
-        # Поиск рег. выражений
-        # results = self.scan_china_index(text)
-
-        # Поиск гос. номеров
-        results = self.scan_license_plate(text)
-        tokens = results
-        token_table = QTableWidget()
-        token_table.setRowCount(len(tokens))
-        token_table.setColumnCount(3)
-
-        if self.current_lang == 'ru':
-            headers = ["Найденная подстрока", "Позиция", "Длина"]
-        else:
-            headers = ["Найденная подстрока", "Позиция", "Длина"]
-
-        token_table.setHorizontalHeaderLabels(headers)
-        token_table.setColumnWidth(0, 150)
-        token_table.setColumnWidth(1, 150)
-        token_table.setColumnWidth(2, 150)
-
-        for row, token in enumerate(tokens):
-            token_table.setItem(row, 0, QTableWidgetItem(token['substring']))
-            token_table.setItem(row, 1, QTableWidgetItem(f"{token['line']}, {token['start_pos']}-{token['end_pos']}"))
-            token_table.setItem(row, 2, QTableWidgetItem(str(token['length'])))
-
-        token_table.setAlternatingRowColors(True)
-        token_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        token_table.horizontalHeader().setStretchLastSection(True)
-        token_table.cellClicked.connect(self.on_table_click)
-
-        tab_name = "Строки" if self.current_lang == 'ru' else "Strings"
-        self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(tokens)})")
 
     def run_program(self):
         editor = self.tabWidgetEditor.currentWidget()
@@ -880,15 +906,16 @@ class TextEditor(QMainWindow):
         scanner = Scanner()
         scanner_results = scanner.scan(text)
         tokens = scanner_results
-
-        parser = Parser()
-        syntax_errors = parser.parse(tokens)
+        parser = Parser(tokens)
+        syntax_errors = parser.parse()
 
         while self.tabWidgetResult.count() > 0:
             self.tabWidgetResult.removeTab(0)
 
-        # tab 1 lex
+        # tab  lex
         token_table = QTableWidget()
+
+        
         token_table.setRowCount(len(tokens))
         token_table.setColumnCount(4)
 
@@ -901,7 +928,7 @@ class TextEditor(QMainWindow):
         token_table.setColumnWidth(1, 150)
         token_table.setColumnWidth(2, 150)
         token_table.setColumnWidth(3, 150)
-        
+
         for row, token in enumerate(tokens):
             code = token[0]
             type_name = token[1]
@@ -926,56 +953,54 @@ class TextEditor(QMainWindow):
         tab_name = "Лексемы" if self.current_lang == 'ru' else "Tokens"
         self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(tokens)})")
 
-        # tab 2 errors
+        lexical_errors = []
+        for token in tokens:
+            code, type_name, lexeme, position = token
+            if code == "ERROR":
+                lexical_errors.append({
+                    "fragment": lexeme,
+                    "error_type": "лексическая" if self.current_lang == 'ru' else "lexical",
+                    "description": type_name,
+                    "position": position,
+                })
+
+        syntax_error_rows = []
+        for error in syntax_errors:
+            syntax_error_rows.append({
+                "fragment": error["fragment"],
+                "error_type": "синтаксическая" if self.current_lang == 'ru' else "syntax",
+                "description": error["description"],
+                "position": error["position"],
+            })
+
+        all_errors = lexical_errors + syntax_error_rows
+
         error_table = QTableWidget()
-        error_table.setColumnCount(3)
+        error_table.setRowCount(len(all_errors))
+        error_table.setColumnCount(4)
 
         if self.current_lang == 'ru':
-            error_headers = ["Неверный фрагмент", "Местоположение", "Описание"]
+            error_headers = ["Ошибочный фрагмент", "Тип ошибки", "Описание ошибки", "Местоположение"]
+            error_tab_name = "Ошибки"
         else:
-            error_headers = ["Invalid fragment", "Location", "Description"]
+            error_headers = ["Fragment", "Error type", "Description", "Location"]
+            error_tab_name = "Errors"
 
         error_table.setHorizontalHeaderLabels(error_headers)
-        error_table.setColumnWidth(0, 150)
-        error_table.setColumnWidth(1, 200)
-        error_table.setColumnWidth(2, 300)
+        error_table.setColumnWidth(0, 180)
+        error_table.setColumnWidth(1, 130)
+        error_table.setColumnWidth(2, 260)
+        error_table.setColumnWidth(3, 170)
 
-        if syntax_errors:
-            error_table.setRowCount(len(syntax_errors))
-            for row, error in enumerate(syntax_errors):
-                error_table.setItem(row, 0, QTableWidgetItem(error['fragment']))
-                # ИСПРАВЛЕНО: используем start_pos и end_pos
-                location = f"строка {error['line']}, позиция {error['start_pos']}-{error['end_pos']}"
-                error_table.setItem(row, 1, QTableWidgetItem(location))
-                error_table.setItem(row, 2, QTableWidgetItem(error['message']))
-
-                error_table.item(row, 2).setForeground(QColor("#FF0000"))
-        else:
-            error_table.setRowCount(1)
-            error_table.setColumnCount(1)
-            if self.current_lang == 'ru':
-                error_table.setHorizontalHeaderLabels(["Результат"])
-                success_text = "✅ Синтаксис корректен"
-            else:
-                error_table.setHorizontalHeaderLabels(["Result"])
-                success_text = "✅ Syntax is correct"
-
-            success_item = QTableWidgetItem(success_text)
-            success_item.setForeground(QColor("#90EE90"))
-            error_table.setItem(0, 0, success_item)
+        for row, error in enumerate(all_errors):
+            error_table.setItem(row, 0, QTableWidgetItem(error["fragment"]))
+            error_table.setItem(row, 1, QTableWidgetItem(error["error_type"]))
+            error_table.setItem(row, 2, QTableWidgetItem(error["description"]))
+            error_table.setItem(row, 3, QTableWidgetItem(error["position"]))
 
         error_table.setAlternatingRowColors(True)
         error_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         error_table.horizontalHeader().setStretchLastSection(True)
-
         error_table.cellClicked.connect(self.on_table_click)
 
-        error_tab_name = "Синтаксис" if self.current_lang == 'ru' else "Syntax"
-        error_count = len(syntax_errors)
-        self.tabWidgetResult.addTab(
-            error_table, f"{error_tab_name} ({error_count})")
-
-        self.tabWidgetResult.setCurrentIndex(0)
-
-        status_msg = f"Лексем: {len(tokens)}, Ошибок: {error_count}"
-        self.statusBar().showMessage(status_msg, 5000)
+        self.tabWidgetResult.addTab(error_table, f"{error_tab_name} ({len(all_errors)})")
