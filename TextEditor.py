@@ -912,11 +912,12 @@ class TextEditor(QMainWindow):
         while self.tabWidgetResult.count() > 0:
             self.tabWidgetResult.removeTab(0)
 
-        # tab  lex
-        token_table = QTableWidget()
-
+        # ========== ВКЛАДКА 1: ЛЕКСЕМЫ (без ERROR) ==========
+        # Фильтруем токены: убираем ERROR
+        valid_tokens = [t for t in tokens if t[0] != "ERROR"]
         
-        token_table.setRowCount(len(tokens))
+        token_table = QTableWidget()
+        token_table.setRowCount(len(valid_tokens))
         token_table.setColumnCount(4)
 
         if self.current_lang == 'ru':
@@ -929,7 +930,7 @@ class TextEditor(QMainWindow):
         token_table.setColumnWidth(2, 150)
         token_table.setColumnWidth(3, 150)
 
-        for row, token in enumerate(tokens):
+        for row, token in enumerate(valid_tokens):
             code = token[0]
             type_name = token[1]
             lexeme = token[2]
@@ -951,19 +952,21 @@ class TextEditor(QMainWindow):
         token_table.cellClicked.connect(self.on_table_click)
 
         tab_name = "Лексемы" if self.current_lang == 'ru' else "Tokens"
-        self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(tokens)})")
+        self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(valid_tokens)})")
 
+        # ========== ВКЛАДКА 2: ОШИБКИ ==========
+        # Собираем лексические ошибки
         lexical_errors = []
         for token in tokens:
-            code, type_name, lexeme, position = token
-            if code == "ERROR":
+            if token[0] == "ERROR":
                 lexical_errors.append({
-                    "fragment": lexeme,
+                    "fragment": token[2],
                     "error_type": "лексическая" if self.current_lang == 'ru' else "lexical",
-                    "description": type_name,
-                    "position": position,
+                    "description": token[1],
+                    "position": token[3],
                 })
 
+        # Синтаксические ошибки
         syntax_error_rows = []
         for error in syntax_errors:
             syntax_error_rows.append({

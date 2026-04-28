@@ -47,7 +47,6 @@ class Parser:
             self.last_line = line
 
     def _parse_position(self, position: str) -> tuple[int, int, int]:
-        # format: "СЃС‚СЂРѕРєР° 2, 5-9" (locale-independent by parsing digits)
         nums = re.findall(r"\d+", position)
         if len(nums) >= 3:
             return int(nums[0]), int(nums[1]), int(nums[2])
@@ -189,7 +188,7 @@ class Parser:
 
     def _recover_missing_case_decl(self) -> None:
         # Восстановление для записи вида "ident ;" без ключевого слова case.
-        self._add_error("Ожидалось ключевое case", prefer_eof_on_newline=False)
+        self._add_error("ключевое слово case", prefer_eof_on_newline=False)
         if self._check(3):
             self._advance()
             self._expect(4, ";")
