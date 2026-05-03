@@ -157,17 +157,13 @@ Add your own screenshots under `screenshots/` and keep the names below (or adjus
 
 | # | What to capture | Suggested path |
 |---|-----------------|----------------|
-| 1 | Valid program: **AST** tab with tree + zero semantic errors | [`../../screenshots/ast_test_valid_tab.png`](../../screenshots/ast_test_valid_tab.png) |
-| 2 | Same or other valid program: **graphical Show AST** window | [`../../screenshots/ast_test_graphic_window.png`](../../screenshots/ast_test_graphic_window.png) |
-| 3 | Duplicate **enum** name: **Errors** tab + **AST** tab (only first enum) | [`../../screenshots/ast_test_duplicate_enum.png`](../../screenshots/ast_test_duplicate_enum.png) |
-| 4 | Duplicate **case**: **Errors** tab + **AST** tab (single case node) | [`../../screenshots/ast_test_duplicate_case.png`](../../screenshots/ast_test_duplicate_case.png) |
-| 5 | Lexical or syntax error: **AST** tab shows “tree not built” message | [`../../screenshots/ast_test_blocked_by_syntax.png`](../../screenshots/ast_test_blocked_by_syntax.png) |
+| 1 | Valid program: **AST** tab with tree + zero semantic errors | ![`../../screenshots/ast_test_valid_tab.png`](../../screenshots/ast_test_valid_tab.png) |
+| 2 | Same or other valid program: **graphical Show AST** window | ![`../../screenshots/ast_test_graphic_window.png`](../../screenshots/ast_test_graphic_window.png) |
+| 3 | Duplicate **enum** name: **Errors** tab + **AST** tab (only first enum) | ![`../../screenshots/ast_test_duplicate_enum.png`](../../screenshots/ast_test_duplicate_enum.png) |
+| 4 | Duplicate **case**: **Errors** tab + **AST** tab (single case node) | ![`../../screenshots/ast_test_duplicate_case.png`](../../screenshots/ast_test_duplicate_case.png) |
+| 5 | Lexical or syntax error: **AST** tab shows “tree not built” message | ![`../../screenshots/ast_test_blocked_by_syntax.png`](../../screenshots/ast_test_blocked_by_syntax.png) |
 
-Example embed for the first row (after you add the file):
 
-```markdown
-![Valid program — AST tab](../../screenshots/ast_test_valid_tab.png)
-```
 
 ---
 
@@ -196,6 +192,3 @@ For packaged releases (if any), follow the instructions in the main [README.md](
 | `ast_view.py` | Graphical AST dialog |
 | `TextEditor.py` | Result tabs (tokens, AST text, errors), `Show AST` action |
 
----
-
-*Last updated: aligns with Editor-Analyzer enum-only grammar and AST/semantic behavior described above.*
