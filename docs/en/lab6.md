@@ -65,18 +65,20 @@ The lexer scans a line left-to-right. Below is a **logical** finite-state view (
 
 ```mermaid
 flowchart LR
-  S0([Start / next char])
-  S0 -->|whitespace| SW[Collect whitespace → SPACE]
+  S0([Start, next char])
+  S0 -->|whitespace| SW["Collect whitespace, token SPACE"]
   SW --> S0
-  S0 -->|digit| N[Collect digits → NUM]
+  S0 -->|digit| N["Collect digits, token NUM"]
   N --> S0
-  S0 -->|letter| I[Collect letters, digits, _ → ID]
+  S0 -->|letter| I["Collect id body, token ID"]
   I --> S0
-  S0 -->|+ - * / % ( )| OP[Single-char operator / bracket]
+  S0 -->|char in SYMBOLS| OP["Emit one operator or paren"]
   OP --> S0
-  S0 -->|other| ERR[ERROR: invalid character]
+  S0 -->|no rule matches| ERR["ERROR invalid character"]
   ERR --> S0
 ```
+
+(`SYMBOLS` in code maps `+`, `-`, `*`, `/`, `%`, `(`, `)` to token codes.)
 
 **Your screenshot (diagram drawn in draw.io, Dia, etc.):**
 
@@ -108,11 +110,13 @@ flowchart TB
   E --> T
   T --> F
   T --> B
-  F -->|"|("| E
+  F --> E
   E --> A
-  A -->|optional + / -| T
-  B -->|optional * / / / %| F
+  A --> T
+  B --> F
 ```
+
+Arrows mean: `parse_E` calls `parse_T` then `parse_A`; `parse_T` calls `parse_F` then `parse_B`; `parse_F` on a left parenthesis calls `parse_E` again; `parse_A` loops on `+` or `-` and each time calls `parse_T`; `parse_B` loops on `*`, `/`, or `%` and each time calls `parse_F`.
 
 ### 3.1 Syntax errors reported (illustrative)
 
