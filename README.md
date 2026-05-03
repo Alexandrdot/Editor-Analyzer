@@ -120,6 +120,8 @@ Place exported screenshots (e.g. main window with the AST tab and the graphics w
 
 ## [Lab 6](./docs/en/lab6.md)
 
+## [Lab 7](./docs/ru/lab7.md)
+
 ## Technical limitations
 
 1. Encoding: Only UTF-8 is supported (other encodings may not be displayed correctly)
