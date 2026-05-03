@@ -2,15 +2,13 @@
 
 This document matches the **Editor-Analyzer** variant implemented in the repository: a small **expression language** (arithmetic), lexer, recursive-descent parser, **tetrads** `(op, arg1, arg2, result)`, and **POLIZ (RPN)** with integer evaluation via Dijkstra’s shunting-yard algorithm.
 
-**Screenshot files:** add your exported PNG (or other) files under `screenshots/lab6/` using the paths below.
-
 ---
 
 ## 1. Assignment variant: language fragment and context-free grammar
 
 ### 1.1 Informal language
 
-The analyzed “language” is a **single arithmetic expression** over:
+The analyzed Swift is a **single arithmetic expression** over:
 
 - non-negative **integer literals** (`num`);
 - **identifiers** (`id`, for symbolic operands in tetrads only);
@@ -22,7 +20,7 @@ One input string in the editor is treated as **one expression** (line breaks act
 
 ### 1.2 Lexical rules (regular / token classes)
 
-| Token class | Pattern (informal) | Examples |
+| Token class | Pattern  | Examples |
 |-------------|-------------------|----------|
 | `num` | one or more decimal digits | `0`, `42`, `100` |
 | `id` | letter, then letters / digits / `_` | `x`, `a1`, `var_name` |
@@ -80,10 +78,6 @@ flowchart LR
 
 (`SYMBOLS` in code maps `+`, `-`, `*`, `/`, `%`, `(`, `)` to token codes.)
 
-**Your screenshot (diagram drawn in draw.io, Dia, etc.):**
-
-![Lexer: state diagram (place file at this path)](../../screenshots/lab6/lexer-state-diagram.png)
-
 ---
 
 ## 3. Syntax analysis: recursive-descent scheme
@@ -118,7 +112,7 @@ flowchart TB
 
 Arrows mean: `parse_E` calls `parse_T` then `parse_A`; `parse_T` calls `parse_F` then `parse_B`; `parse_F` on a left parenthesis calls `parse_E` again; `parse_A` loops on `+` or `-` and each time calls `parse_T`; `parse_B` loops on `*`, `/`, or `%` and each time calls `parse_F`.
 
-### 3.1 Syntax errors reported (illustrative)
+### 3.1 Syntax errors reported
 
 | Situation | Typical message (RU / EN in app) |
 |-----------|----------------------------------|
@@ -127,13 +121,12 @@ Arrows mean: `parse_E` calls `parse_T` then `parse_A`; `parse_T` calls `parse_F`
 | Extra `)` after a complete expression | Syntax: extra closing parenthesis |
 | `(` without matching `)` | Syntax: expected `)` |
 
-**Your screenshots:** lexer token table + errors tab for **2–3 test strings** (one valid, one lexical error, one syntax error).
 
-![Lexer and parser: tokens tab — example](../../screenshots/lab6/run-tokens-valid.png)
+![Lexer and parser: tokens tab — example](../../screenshots/run-tokens-valid.png)
 
-![Lexer and parser: errors — lexical example](../../screenshots/lab6/run-errors-lexical.png)
+![Lexer and parser: errors — lexical example](../../screenshots/run-errors-lexical.png)
 
-![Lexer and parser: errors — syntax example](../../screenshots/lab6/run-errors-syntax.png)
+![Lexer and parser: errors — syntax example](../../screenshots/run-errors-syntax.png)
 
 ---
 
@@ -156,7 +149,7 @@ Intermediate results use temporaries **`t1`, `t2`, `t3`, …**
 
 **Your screenshot:** main window, tab **“Тетрады / ПОЛИЗ”** (or **“Tetrads / RPN”**) for a **correct** chain, showing the tetrad list.
 
-![Tetrads table in the application](../../screenshots/lab6/tetrads-tab.png)
+![Tetrads table in the application](../../screenshots/tetrads-tab.png)
 
 ---
 
@@ -165,14 +158,10 @@ Intermediate results use temporaries **`t1`, `t2`, `t3`, …**
 - **Construction:** shunting-yard algorithm on the token stream (same precedence as the grammar).
 - **Restriction in this lab:** **POLIZ string and numeric value** are shown **only if the expression contains integer literals only** (no identifiers). If identifiers appear (e.g. `a + b`), tetrads may still be listed, with an explanatory note instead of POLIZ/value.
 
-**Example** (integers only), expression `3 + 4 * 5`:
+**Example** (error test), expression `3 + 4 * $$5`:
 
-- **POLIZ:** `3 4 5 * +`
-- **Value:** `23`
 
-**Your screenshot:** the same (or another) run with **only integers**, showing **POLIZ line + computed value**.
-
-![POLIZ and integer evaluation](../../screenshots/lab6/poliz-and-value.png)
+![POLIZ and integer evaluation](../../screenshots/lab6/tetrads-error.png)
 
 ---
 
@@ -185,24 +174,3 @@ python3 main.py
 ```
 
 Enter an expression in the editor, then **Play → Run** (Пуск). Inspect tabs **Tokens**, **Tetrads / RPN**, and **Errors**.
-
----
-
-## 7. File checklist (screenshots you attach)
-
-| # | Relative path (from repo root) | Content |
-|---|-------------------------------|---------|
-| 1 | `screenshots/lab6/lexer-state-diagram.png` | Lexer diagram |
-| 2 | `screenshots/lab6/run-tokens-valid.png` | Tokens for a valid expression |
-| 3 | `screenshots/lab6/run-errors-lexical.png` | Lexical error example |
-| 4 | `screenshots/lab6/run-errors-syntax.png` | Syntax error example |
-| 5 | `screenshots/lab6/tetrads-tab.png` | Tetrads for a correct chain |
-| 6 | `screenshots/lab6/poliz-and-value.png` | POLIZ + value (integers only) |
-
-Create the folder:
-
-```text
-screenshots/lab6/
-```
-
-if it does not exist, then drop your images there with the names above (or change the paths in this file to match your filenames).
