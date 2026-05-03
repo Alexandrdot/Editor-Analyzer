@@ -161,7 +161,7 @@ Intermediate results use temporaries **`t1`, `t2`, `t3`, …**
 **Example** (error test), expression `3 + 4 * $$5`:
 
 
-![POLIZ and integer evaluation](../../screenshots/lab6/tetrads-error.png)
+![POLIZ and integer evaluation](../../screenshots/tetrads-error.png)
 
 ---
 
