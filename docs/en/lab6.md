@@ -61,8 +61,7 @@ a + b * c - d / e % 5
 
 The lexer scans a line left-to-right. Below is a **logical** finite-state view (implementations may merge states in code).
 
-![Lexer Diagram](../../screenshots/lexer-diagram-lab6.png)
-
+<img src="../../screenshots/lexer-diagram-lab6.png" alt="Lexer Diagram" height="300">
 
 (`SYMBOLS` in code maps `+`, `-`, `*`, `/`, `%`, `(`, `)` to token codes.)
 
@@ -82,7 +81,7 @@ Procedures correspond 1:1 to nonterminals (see `parser.py`):
 
 **Control flow (calls):**
 
-![Parser Diagram](../../screenshots/parser-diagram-lab6.png)
+<img src="../../screenshots/parser-diagram-lab6.png" alt="Parser Diagram" height="300">
 
 Arrows mean: `parse_E` calls `parse_T` then `parse_A`; `parse_T` calls `parse_F` then `parse_B`; `parse_F` on a left parenthesis calls `parse_E` again; `parse_A` loops on `+` or `-` and each time calls `parse_T`; `parse_B` loops on `*`, `/`, or `%` and each time calls `parse_F`.
 
