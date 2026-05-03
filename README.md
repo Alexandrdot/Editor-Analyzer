@@ -116,6 +116,8 @@ Place exported screenshots (e.g. main window with the AST tab and the graphics w
 
 ## [Regular expressions](./docs/en/regexp.md)
 
+## [AST](./docs/en/ast.md)
+
 ## Technical limitations
 
 1. Encoding: Only UTF-8 is supported (other encodings may not be displayed correctly)
