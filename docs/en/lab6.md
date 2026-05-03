@@ -61,20 +61,8 @@ a + b * c - d / e % 5
 
 The lexer scans a line left-to-right. Below is a **logical** finite-state view (implementations may merge states in code).
 
-```mermaid
-flowchart LR
-  S0([Start, next char])
-  S0 -->|whitespace| SW["Collect whitespace, token SPACE"]
-  SW --> S0
-  S0 -->|digit| N["Collect digits, token NUM"]
-  N --> S0
-  S0 -->|letter| I["Collect id body, token ID"]
-  I --> S0
-  S0 -->|char in SYMBOLS| OP["Emit one operator or paren"]
-  OP --> S0
-  S0 -->|no rule matches| ERR["ERROR invalid character"]
-  ERR --> S0
-```
+![Lexer Diagram](../../screenshots/lexer-diagram-lab6.png)
+
 
 (`SYMBOLS` in code maps `+`, `-`, `*`, `/`, `%`, `(`, `)` to token codes.)
 
@@ -94,21 +82,7 @@ Procedures correspond 1:1 to nonterminals (see `parser.py`):
 
 **Control flow (calls):**
 
-```mermaid
-flowchart TB
-  E[parse_E]
-  T[parse_T]
-  A[parse_A]
-  F[parse_F]
-  B[parse_B]
-  E --> T
-  T --> F
-  T --> B
-  F --> E
-  E --> A
-  A --> T
-  B --> F
-```
+![Parser Diagram](../../screenshots/parser-diagram-lab6.png)
 
 Arrows mean: `parse_E` calls `parse_T` then `parse_A`; `parse_T` calls `parse_F` then `parse_B`; `parse_F` on a left parenthesis calls `parse_E` again; `parse_A` loops on `+` or `-` and each time calls `parse_T`; `parse_B` loops on `*`, `/`, or `%` and each time calls `parse_F`.
 
