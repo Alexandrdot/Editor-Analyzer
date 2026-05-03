@@ -2,6 +2,8 @@
 import re
 from typing import List, Optional
 
+from ast_nodes import AstNode
+
 
 ENUM = 1
 CASE = 2
@@ -23,17 +25,67 @@ class Token:
 
 
 class Parser:
-    def __init__(self, scanner_tokens: List[list]):
+    def __init__(self, scanner_tokens: List[list], lang: str = "ru"):
         self.syntax_errors: List[dict] = []
+        self.semantic_errors: List[dict] = []
         self.tokens: List[Token] = []
         self.pos = 0
         self.last_consumed: Optional[Token] = None
         self.last_line = 1
+        self.lang = lang if lang in ("ru", "en") else "ru"
+        self.ast_root: AstNode = AstNode("ProgramNode")
+        self._declared_enum_names: set[str] = set()
         self._prepare_tokens(scanner_tokens)
 
     def parse(self) -> List[dict]:
         self._parse_program()
         return self.syntax_errors
+
+    def _sem(self, key: str, **fmt: str) -> str:
+        msgs = {
+            "ru": {
+                "dup_enum": "идентификатор '{name}' уже объявлен ранее",
+                "dup_case": "вариант '{case}' в перечислении '{enum}' уже объявлен",
+            },
+            "en": {
+                "dup_enum": "identifier '{name}' has already been declared",
+                "dup_case": "case '{case}' in enum '{enum}' is already declared",
+            },
+        }
+        return msgs[self.lang][key].format(**fmt)
+
+    def _add_semantic_error(self, message: str, token: Token) -> None:
+        self.semantic_errors.append(
+            {
+                "fragment": token.lexeme,
+                "description": f"Семантическая ошибка: {message}"
+                if self.lang == "ru"
+                else f"Semantic error: {message}",
+                "position": token.raw_position,
+            }
+        )
+
+    def _register_enum_ast(self, enum_name_token: Token, case_tokens: List[Token]) -> None:
+        name = enum_name_token.lexeme
+        if name in self._declared_enum_names:
+            self._add_semantic_error(self._sem("dup_enum", name=name), enum_name_token)
+            return
+
+        self._declared_enum_names.add(name)
+        enum_node = AstNode("EnumDeclNode", attrs={"name": name})
+        seen_cases: set[str] = set()
+
+        for tok in case_tokens:
+            cn = tok.lexeme
+            if cn in seen_cases:
+                self._add_semantic_error(
+                    self._sem("dup_case", case=cn, enum=name), tok
+                )
+                continue
+            seen_cases.add(cn)
+            enum_node.children.append(AstNode("EnumCaseNode", attrs={"name": cn}))
+
+        self.ast_root.children.append(enum_node)
 
     def _parse_program(self) -> None:
         # Program := EnumDecl*
@@ -82,6 +134,8 @@ class Parser:
             self._skip_to_next_enum()
             return
 
+        enum_name_token = self.last_consumed
+
         if not self._expect(LBRACE, "{"):
             if self._starts_enum_body():
                 if self._parse_enum_body():
@@ -93,10 +147,16 @@ class Parser:
                 self._skip_to_next_enum()
             return
 
-        if self._parse_enum_body():
-            self._expect_declaration_semicolon()
+        cases_tokens: List[Token] = []
+        if self._parse_enum_body(cases_out=cases_tokens):
+            if self._consume(SEMICOLON):
+                self._register_enum_ast(enum_name_token, cases_tokens)
+            else:
+                self._add_error(";")
+                if not self._check(ENUM) and not self._at_end():
+                    self._skip_to_next_enum()
 
-    def _parse_enum_body(self) -> bool:
+    def _parse_enum_body(self, cases_out: Optional[List[Token]] = None) -> bool:
         # EnumBody := CaseDecl+
         saw_item = False
         last_item_had_error = False
@@ -118,7 +178,7 @@ class Parser:
 
             saw_item = True
             if self._check(CASE):
-                last_item_had_error = not self._parse_case_declaration()
+                last_item_had_error = not self._parse_case_declaration(cases_out)
             else:
                 last_item_had_error = True
                 self._parse_bad_case_declaration()
@@ -128,7 +188,7 @@ class Parser:
             self._add_error(expected)
         return False
 
-    def _parse_case_declaration(self) -> bool:
+    def _parse_case_declaration(self, cases_out: Optional[List[Token]] = None) -> bool:
         # CaseDecl := case Identifier ;
         self._advance()
 
@@ -136,6 +196,9 @@ class Parser:
             self._add_error("идентификатор")
             self._recover_after_missing_case_identifier()
             return False
+
+        if cases_out is not None and self.last_consumed is not None:
+            cases_out.append(self.last_consumed)
 
         if not self._consume(SEMICOLON):
             self._add_error(";")

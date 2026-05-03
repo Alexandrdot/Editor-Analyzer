@@ -102,6 +102,17 @@ Button|	Action|	Description|
 ## Analyzers
 1. [Lexical analyzer](./docs/en/lexer.md)
 2. [Syntax analyzer](./docs/en/parser.md)
+3. **Semantic analyzer and AST.** After scanning and parsing, the program builds an abstract syntax tree (`ProgramNode` → `EnumDeclNode` → `EnumCaseNode`) and performs context checks for this language: uniqueness of enum names in the program and uniqueness of `case` names within each enum. Results appear in the **AST** tab (text tree and a count of semantic errors) and in the **Errors** tab (semantic errors include the source position).
+
+### Graphical AST (bonus)
+The **Show AST** action (menu **Play → Show AST**, toolbar, or `Ctrl+Shift+A`) opens a separate window with a **graphical** tree: each node shows its type and attributes, edges show the parent–child structure. Implementation uses **PyQt6** (`QGraphicsScene`, `QGraphicsView`, primitives for rectangles, text, and connecting lines) — no extra plotting libraries.
+
+Example test inputs for screenshots:
+- Valid: `enum Day { case monday; case tuesday; };` — tree with one enum and two cases.
+- Duplicate enum: two declarations `enum A { ... };` with the same name — second declaration is rejected semantically; AST keeps only the first.
+- Duplicate `case` inside one enum — second case is omitted from the AST with a semantic error on the duplicate identifier.
+
+Place exported screenshots (e.g. main window with the AST tab and the graphics window) in `./screenshots/` if you document them in a report.
 
 ## [Regular expressions](./docs/en/regexp.md)
 

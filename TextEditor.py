@@ -1,12 +1,14 @@
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QMenuBar, QFileDialog,
                              QMessageBox, QLabel, QTableWidget,
-                             QTableWidgetItem)
+                             QTableWidgetItem, QPlainTextEdit)
 from PyQt6.Qsci import (QsciScintilla, QsciLexerJavaScript)
-from PyQt6.QtGui import QAction, QColor, QDesktopServices
+from PyQt6.QtGui import QAction, QColor, QDesktopServices, QFont
 from PyQt6.QtCore import QUrl
 from PyQt6.uic import loadUi
 from scanner import Scanner
 from parser import Parser
+from ast_nodes import AstNode, format_ast_tree
+from ast_view import AstGraphicsDialog
 import os
 import sys
 
@@ -139,6 +141,9 @@ class TextEditor(QMainWindow):
         self.setAcceptDrops(True)
 
         self.file_paths = {}
+        self._last_ast_root = None
+        self._analysis_ran = False
+        self._ast_blocked_by_lex_syn = False
 
         self.label_texteditor.linkActivated.connect(self.open_link)
         self.label_result.linkActivated.connect(self.open_link)
@@ -219,6 +224,10 @@ class TextEditor(QMainWindow):
         self.run = self.findChild(QAction, 'play')
         if self.run:
             self.run.triggered.connect(self.run_program)
+
+        self.showAstAction = self.findChild(QAction, 'show_ast')
+        if self.showAstAction:
+            self.showAstAction.triggered.connect(self.show_ast_graph)
 
         # Text
         self.stateDiagram = self.findChild(QAction, 'state_diagram')
@@ -390,8 +399,8 @@ class TextEditor(QMainWindow):
         widget.deleteLater()
 
         if self.tabWidgetEditor.count() == 0:
-            self.tabWidgetResult.removeTab(0)
-            self.tabWidgetResult.removeTab(0)
+            while self.tabWidgetResult.count() > 0:
+                self.tabWidgetResult.removeTab(0)
 
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -628,6 +637,8 @@ class TextEditor(QMainWindow):
         self.selectAllText.setText("Выделить всё")
 
         self.run.setText("Пуск")
+        if self.showAstAction:
+            self.showAstAction.setText("Показать AST")
 
         # Text menu
         self.stateDiagram.setText("Диаграмма состояний")
@@ -686,6 +697,8 @@ class TextEditor(QMainWindow):
         self.selectAllText.setText("Select All")
 
         self.run.setText("Run")
+        if self.showAstAction:
+            self.showAstAction.setText("Show AST")
 
         # Text menu
         self.stateDiagram.setText("State Diagram")
@@ -906,8 +919,29 @@ class TextEditor(QMainWindow):
         scanner = Scanner()
         scanner_results = scanner.scan(text)
         tokens = scanner_results
-        parser = Parser(tokens)
+
+        lexical_errors = []
+        for token in tokens:
+            if token[0] == "ERROR":
+                lexical_errors.append({
+                    "fragment": token[2],
+                    "error_type": "лексическая" if self.current_lang == 'ru' else "lexical",
+                    "description": token[1],
+                    "position": token[3],
+                })
+
+        parser = Parser(tokens, lang=self.current_lang)
         syntax_errors = parser.parse()
+
+        can_build_ast = not lexical_errors and not syntax_errors
+        self._analysis_ran = True
+        self._ast_blocked_by_lex_syn = not can_build_ast
+        if not can_build_ast:
+            parser.ast_root = AstNode("ProgramNode")
+            parser.semantic_errors.clear()
+            self._last_ast_root = None
+        else:
+            self._last_ast_root = parser.ast_root
 
         while self.tabWidgetResult.count() > 0:
             self.tabWidgetResult.removeTab(0)
@@ -954,18 +988,52 @@ class TextEditor(QMainWindow):
         tab_name = "Лексемы" if self.current_lang == 'ru' else "Tokens"
         self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(valid_tokens)})")
 
-        # ========== ВКЛАДКА 2: ОШИБКИ ==========
-        # Собираем лексические ошибки
-        lexical_errors = []
-        for token in tokens:
-            if token[0] == "ERROR":
-                lexical_errors.append({
-                    "fragment": token[2],
-                    "error_type": "лексическая" if self.current_lang == 'ru' else "lexical",
-                    "description": token[1],
-                    "position": token[3],
-                })
+        # ========== ВКЛАДКА: AST (текст) ==========
+        mono = QFont()
+        mono.setStyleHint(QFont.StyleHint.Monospace)
+        mono.setPointSize(11)
 
+        if not can_build_ast:
+            if self.current_lang == 'ru':
+                ast_text = (
+                    "Абстрактное синтаксическое дерево не построено.\n\n"
+                    "Устраните все лексические и синтаксические ошибки — "
+                    "только после этого выполняется семантический анализ и вывод AST."
+                )
+            else:
+                ast_text = (
+                    "Abstract syntax tree was not built.\n\n"
+                    "Fix all lexical and syntax errors first — only then "
+                    "semantic analysis and the AST are produced."
+                )
+        else:
+            ast_body = format_ast_tree(parser.ast_root)
+            sem_count = len(parser.semantic_errors)
+            if self.current_lang == 'ru':
+                ast_text = (
+                    ast_body
+                    + "\n\n"
+                    + "─" * 48
+                    + "\n"
+                    + f"Всего семантических ошибок: {sem_count}"
+                )
+            else:
+                ast_text = (
+                    ast_body
+                    + "\n\n"
+                    + "─" * 48
+                    + "\n"
+                    + f"Total semantic errors: {sem_count}"
+                )
+
+        ast_tab_title = "AST"
+        ast_view = QPlainTextEdit()
+        ast_view.setReadOnly(True)
+        ast_view.setFont(mono)
+        ast_view.setPlainText(ast_text)
+        self.tabWidgetResult.addTab(ast_view, ast_tab_title)
+
+        # ========== ВКЛАДКА: ОШИБКИ ==========
         # Синтаксические ошибки
         syntax_error_rows = []
         for error in syntax_errors:
@@ -976,7 +1044,16 @@ class TextEditor(QMainWindow):
                 "position": error["position"],
             })
 
-        all_errors = lexical_errors + syntax_error_rows
+        semantic_error_rows = []
+        for error in parser.semantic_errors:
+            semantic_error_rows.append({
+                "fragment": error["fragment"],
+                "error_type": "семантическая" if self.current_lang == 'ru' else "semantic",
+                "description": error["description"],
+                "position": error["position"],
+            })
+
+        all_errors = lexical_errors + syntax_error_rows + semantic_error_rows
 
         error_table = QTableWidget()
         error_table.setRowCount(len(all_errors))
@@ -1007,3 +1084,29 @@ class TextEditor(QMainWindow):
         error_table.cellClicked.connect(self.on_table_click)
 
         self.tabWidgetResult.addTab(error_table, f"{error_tab_name} ({len(all_errors)})")
+
+    def show_ast_graph(self):
+        if self._last_ast_root is None:
+            if (
+                getattr(self, "_analysis_ran", False)
+                and getattr(self, "_ast_blocked_by_lex_syn", False)
+            ):
+                QMessageBox.information(
+                    self,
+                    "AST",
+                    "Дерево AST не построено: в тексте есть лексические или "
+                    "синтаксические ошибки. Исправьте их и снова нажмите «Пуск»."
+                    if self.current_lang == "ru"
+                    else "AST was not built: fix lexical or syntax errors, then run analysis again.",
+                )
+            else:
+                QMessageBox.information(
+                    self,
+                    "AST",
+                    "Сначала выполните анализ текста (меню «Пуск» → «Пуск»)."
+                    if self.current_lang == "ru"
+                    else "Run analysis first (Play → Run).",
+                )
+            return
+        title = "Дерево AST" if self.current_lang == "ru" else "AST tree"
+        AstGraphicsDialog(self._last_ast_root, title, self).exec()

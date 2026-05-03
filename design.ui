@@ -265,6 +265,7 @@ QMenu::separator {
      <string>Пуск</string>
     </property>
     <addaction name="play"/>
+    <addaction name="show_ast"/>
    </widget>
    <widget class="QMenu" name="menu_5">
     <property name="title">
@@ -479,6 +480,7 @@ QToolBar:vertical QToolButton {
    <addaction name="paste"/>
    <addaction name="separator"/>
    <addaction name="play"/>
+   <addaction name="show_ast"/>
    <addaction name="separator"/>
    <addaction name="about"/>
    <addaction name="info"/>
@@ -645,6 +647,14 @@ QToolBar:vertical QToolButton {
    </property>
    <property name="shortcutVisibleInContextMenu">
     <bool>false</bool>
+   </property>
+  </action>
+  <action name="show_ast">
+   <property name="text">
+    <string>Показать AST</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+A</string>
    </property>
   </action>
   <action name="info">
