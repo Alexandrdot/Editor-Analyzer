@@ -1,11 +1,36 @@
+NUM = 1
+ID = 2
+PLUS = 3
+MINUS = 4
+STAR = 5
+SLASH = 6
+PERCENT = 7
+LPAREN = 8
+RPAREN = 9
+SPACE = 10
+
 CODS_TYPES = {
-    1: 'enum', 2: 'case', 3: 'identifier',
-    4: 'semicolon', 5: 'brace open', 6: 'brace close',
-    7: 'space', 'error': 'invalid symbol'
+    NUM: "number",
+    ID: "identifier",
+    PLUS: "plus",
+    MINUS: "minus",
+    STAR: "multiply",
+    SLASH: "divide",
+    PERCENT: "modulo",
+    LPAREN: "paren open",
+    RPAREN: "paren close",
+    SPACE: "space",
+    "error": "invalid symbol",
 }
 
 SYMBOLS = {
-    ';': 4, '{': 5, '}': 6
+    "+": PLUS,
+    "-": MINUS,
+    "*": STAR,
+    "/": SLASH,
+    "%": PERCENT,
+    "(": LPAREN,
+    ")": RPAREN,
 }
 
-KEYWORDS = {'enum': 1, 'case': 2}
+KEYWORDS: dict[str, int] = {}

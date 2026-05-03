@@ -1,14 +1,14 @@
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QMenuBar, QFileDialog,
                              QMessageBox, QLabel, QTableWidget,
-                             QTableWidgetItem, QPlainTextEdit)
+                             QTableWidgetItem, QPlainTextEdit, QDialog,
+                             QVBoxLayout)
 from PyQt6.Qsci import (QsciScintilla, QsciLexerJavaScript)
 from PyQt6.QtGui import QAction, QColor, QDesktopServices, QFont
 from PyQt6.QtCore import QUrl
 from PyQt6.uic import loadUi
 from scanner import Scanner
 from parser import Parser
-from ast_nodes import AstNode, format_ast_tree
-from ast_view import AstGraphicsDialog
+from typing import Optional
 import os
 import sys
 
@@ -638,7 +638,7 @@ class TextEditor(QMainWindow):
 
         self.run.setText("Пуск")
         if self.showAstAction:
-            self.showAstAction.setText("Показать AST")
+            self.showAstAction.setText("Показать тетрады / ПОЛИЗ")
 
         # Text menu
         self.stateDiagram.setText("Диаграмма состояний")
@@ -698,7 +698,7 @@ class TextEditor(QMainWindow):
 
         self.run.setText("Run")
         if self.showAstAction:
-            self.showAstAction.setText("Show AST")
+            self.showAstAction.setText("Show tetrads / RPN")
 
         # Text menu
         self.stateDiagram.setText("State Diagram")
@@ -740,34 +740,34 @@ class TextEditor(QMainWindow):
             self.lowText.setText("Decrease text")
 
     def get_token_type_ru(self, code, type_name, lexeme):
-        if code in [1, 2]:  # enum, case
-            return "ключевое слово"
-        elif code == 3:
-            return "идентификатор"
-        elif code in [4, 5, 6, 7]:
-            type_map = {
-                4: "точка с запятой",
-                5: "открывающая скобка",
-                6: "закрывающая скобка",
-                7: "пробел",
-            }
-            return type_map.get(code, "разделитель")
-        return type_name
+        type_map = {
+            1: "литерал целого числа",
+            2: "идентификатор",
+            3: "операция сложения",
+            4: "операция вычитания",
+            5: "операция умножения",
+            6: "операция деления",
+            7: "операция остатка",
+            8: "открывающая круглая скобка",
+            9: "закрывающая круглая скобка",
+            10: "пробел",
+        }
+        return type_map.get(code, type_name)
 
     def get_token_type_en(self, code, type_name, lexeme):
-        if code in [1, 2]:  # enum, case
-            return "keyword"
-        elif code == 3:
-            return "identifier"
-        elif code in [4, 5, 6, 7]:
-            type_map = {
-                4: "semicolon",
-                5: "opening brace",
-                6: "closing brace",
-                7: "space",
-            }
-            return type_map.get(code, "separator")
-        return type_name
+        type_map = {
+            1: "integer literal",
+            2: "identifier",
+            3: "addition",
+            4: "subtraction",
+            5: "multiplication",
+            6: "division",
+            7: "modulo",
+            8: "opening parenthesis",
+            9: "closing parenthesis",
+            10: "space",
+        }
+        return type_map.get(code, type_name)
 
     def update_tab_titles(self, lang):
         for i in range(self.tabWidgetEditor.count()):
@@ -917,7 +917,7 @@ class TextEditor(QMainWindow):
             return
 
         scanner = Scanner()
-        scanner_results = scanner.scan(text)
+        scanner_results = scanner.scan(text, lang=self.current_lang)
         tokens = scanner_results
 
         lexical_errors = []
@@ -930,18 +930,55 @@ class TextEditor(QMainWindow):
                     "position": token[3],
                 })
 
-        parser = Parser(tokens, lang=self.current_lang)
-        syntax_errors = parser.parse()
+        syntax_errors: list = []
+        parser: Optional[Parser] = None
+        if not lexical_errors:
+            parser = Parser(tokens, lang=self.current_lang)
+            syntax_errors = parser.parse()
 
-        can_build_ast = not lexical_errors and not syntax_errors
+        can_build_ir = not lexical_errors and not syntax_errors
         self._analysis_ran = True
-        self._ast_blocked_by_lex_syn = not can_build_ast
-        if not can_build_ast:
-            parser.ast_root = AstNode("ProgramNode")
-            parser.semantic_errors.clear()
-            self._last_ast_root = None
+        self._ir_blocked_by_lex_syn = not can_build_ir
+        self._last_ir_text = ""
+        if parser is not None and can_build_ir:
+            lines = []
+            if self.current_lang == "ru":
+                lines.append("Тетрады (op, arg1, arg2, result):")
+            else:
+                lines.append("Tetrads (op, arg1, arg2, result):")
+            for q in parser.tetrads:
+                lines.append(f"  ({q[0]}, {q[1]}, {q[2]}, {q[3]})")
+            if parser.poliz is not None:
+                lines.append("")
+                if self.current_lang == "ru":
+                    lines.append("ПОЛИЗ: " + " ".join(parser.poliz))
+                    if parser.poliz_value is not None:
+                        lines.append(f"Значение: {parser.poliz_value}")
+                else:
+                    lines.append("RPN (POLIZ): " + " ".join(parser.poliz))
+                    if parser.poliz_value is not None:
+                        lines.append(f"Value: {parser.poliz_value}")
+            if parser.poliz_note:
+                lines.append("")
+                lines.append(parser.poliz_note)
+            self._last_ir_text = "\n".join(lines)
+        elif parser is not None and self.current_lang == "ru":
+            self._last_ir_text = (
+                "Тетрады и ПОЛИЗ не построены из-за синтаксических ошибок."
+            )
+        elif parser is not None:
+            self._last_ir_text = (
+                "Tetrads and POLIZ were not built due to syntax errors."
+            )
         else:
-            self._last_ast_root = parser.ast_root
+            if self.current_lang == "ru":
+                self._last_ir_text = (
+                    "Тетрады и ПОЛИЗ не построены из-за лексических ошибок."
+                )
+            else:
+                self._last_ir_text = (
+                    "Tetrads and POLIZ were not built due to lexical errors."
+                )
 
         while self.tabWidgetResult.count() > 0:
             self.tabWidgetResult.removeTab(0)
@@ -988,50 +1025,17 @@ class TextEditor(QMainWindow):
         tab_name = "Лексемы" if self.current_lang == 'ru' else "Tokens"
         self.tabWidgetResult.addTab(token_table, f"{tab_name} ({len(valid_tokens)})")
 
-        # ========== ВКЛАДКА: AST (текст) ==========
+        # ========== ВКЛАДКА: тетрады и ПОЛИЗ ==========
         mono = QFont()
         mono.setStyleHint(QFont.StyleHint.Monospace)
         mono.setPointSize(11)
 
-        if not can_build_ast:
-            if self.current_lang == 'ru':
-                ast_text = (
-                    "Абстрактное синтаксическое дерево не построено.\n\n"
-                    "Устраните все лексические и синтаксические ошибки — "
-                    "только после этого выполняется семантический анализ и вывод AST."
-                )
-            else:
-                ast_text = (
-                    "Abstract syntax tree was not built.\n\n"
-                    "Fix all lexical and syntax errors first — only then "
-                    "semantic analysis and the AST are produced."
-                )
-        else:
-            ast_body = format_ast_tree(parser.ast_root)
-            sem_count = len(parser.semantic_errors)
-            if self.current_lang == 'ru':
-                ast_text = (
-                    ast_body
-                    + "\n\n"
-                    + "─" * 48
-                    + "\n"
-                    + f"Всего семантических ошибок: {sem_count}"
-                )
-            else:
-                ast_text = (
-                    ast_body
-                    + "\n\n"
-                    + "─" * 48
-                    + "\n"
-                    + f"Total semantic errors: {sem_count}"
-                )
-
-        ast_tab_title = "AST"
-        ast_view = QPlainTextEdit()
-        ast_view.setReadOnly(True)
-        ast_view.setFont(mono)
-        ast_view.setPlainText(ast_text)
-        self.tabWidgetResult.addTab(ast_view, ast_tab_title)
+        ir_tab_title = "Тетрады / ПОЛИЗ" if self.current_lang == "ru" else "Tetrads / RPN"
+        ir_view = QPlainTextEdit()
+        ir_view.setReadOnly(True)
+        ir_view.setFont(mono)
+        ir_view.setPlainText(self._last_ir_text)
+        self.tabWidgetResult.addTab(ir_view, ir_tab_title)
 
         # ========== ВКЛАДКА: ОШИБКИ ==========
         # Синтаксические ошибки
@@ -1044,16 +1048,7 @@ class TextEditor(QMainWindow):
                 "position": error["position"],
             })
 
-        semantic_error_rows = []
-        for error in parser.semantic_errors:
-            semantic_error_rows.append({
-                "fragment": error["fragment"],
-                "error_type": "семантическая" if self.current_lang == 'ru' else "semantic",
-                "description": error["description"],
-                "position": error["position"],
-            })
-
-        all_errors = lexical_errors + syntax_error_rows + semantic_error_rows
+        all_errors = lexical_errors + syntax_error_rows
 
         error_table = QTableWidget()
         error_table.setRowCount(len(all_errors))
@@ -1086,27 +1081,37 @@ class TextEditor(QMainWindow):
         self.tabWidgetResult.addTab(error_table, f"{error_tab_name} ({len(all_errors)})")
 
     def show_ast_graph(self):
-        if self._last_ast_root is None:
-            if (
-                getattr(self, "_analysis_ran", False)
-                and getattr(self, "_ast_blocked_by_lex_syn", False)
-            ):
-                QMessageBox.information(
-                    self,
-                    "AST",
-                    "Дерево AST не построено: в тексте есть лексические или "
-                    "синтаксические ошибки. Исправьте их и снова нажмите «Пуск»."
-                    if self.current_lang == "ru"
-                    else "AST was not built: fix lexical or syntax errors, then run analysis again.",
-                )
-            else:
-                QMessageBox.information(
-                    self,
-                    "AST",
-                    "Сначала выполните анализ текста (меню «Пуск» → «Пуск»)."
-                    if self.current_lang == "ru"
-                    else "Run analysis first (Play → Run).",
-                )
+        if not getattr(self, "_analysis_ran", False):
+            QMessageBox.information(
+                self,
+                "ПОЛИЗ" if self.current_lang == "ru" else "RPN",
+                "Сначала выполните анализ текста (меню «Пуск» → «Пуск»)."
+                if self.current_lang == "ru"
+                else "Run analysis first (Play → Run).",
+            )
             return
-        title = "Дерево AST" if self.current_lang == "ru" else "AST tree"
-        AstGraphicsDialog(self._last_ast_root, title, self).exec()
+        if getattr(self, "_ir_blocked_by_lex_syn", False):
+            QMessageBox.information(
+                self,
+                "ПОЛИЗ" if self.current_lang == "ru" else "RPN",
+                "Внутреннее представление не построено: есть лексические или "
+                "синтаксические ошибки."
+                if self.current_lang == "ru"
+                else "Internal form was not built: fix lexical or syntax errors.",
+            )
+            return
+        dlg = QDialog(self)
+        dlg.setWindowTitle(
+            "Тетрады и ПОЛИЗ" if self.current_lang == "ru" else "Tetrads and RPN"
+        )
+        dlg.resize(560, 420)
+        lay = QVBoxLayout(dlg)
+        view = QPlainTextEdit()
+        view.setReadOnly(True)
+        f = QFont()
+        f.setStyleHint(QFont.StyleHint.Monospace)
+        f.setPointSize(11)
+        view.setFont(f)
+        view.setPlainText(getattr(self, "_last_ir_text", ""))
+        lay.addWidget(view)
+        dlg.exec()

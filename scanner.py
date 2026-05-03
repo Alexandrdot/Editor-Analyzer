@@ -1,11 +1,16 @@
-from cods import CODS_TYPES, SYMBOLS, KEYWORDS
+from cods import CODS_TYPES, ID, NUM, SPACE, SYMBOLS
 
 
 class Scanner:
-    def scan(self, text: str):
-        """Построчный анализ с определением позиций"""
+    def scan(self, text: str, lang: str = "ru"):
+        """Построчный разбор: числа, идентификаторы, операции, скобки."""
         results = []
-        lines = text.split('\n')
+        lines = text.split("\n")
+        invalid_msg = {
+            "ru": "недопустимый символ",
+            "en": "invalid character",
+        }
+        msg = invalid_msg.get(lang, invalid_msg["ru"])
 
         for line_num, line in enumerate(lines, 1):
             i = 0
@@ -15,109 +20,82 @@ class Scanner:
                 char = line[i]
                 start = i + 1
 
-                # Пробелы и табуляцию - сохраняем как один токен
-                if char in [' ', '\t', '\r']:
-                    space_count = 0
-                    while i < length and line[i] in [' ', '\t', '\r']:
-                        space_count += 1
+                if char in [" ", "\t", "\r"]:
+                    while i < length and line[i] in [" ", "\t", "\r"]:
                         i += 1
-                    results.append([
-                        7,  # код пробела
-                        CODS_TYPES[7],  # 'space'
-                        ' ',  # один пробел в лексеме
-                        f"строка {line_num}, {start}-{i}"  # позиция пробелов
-                    ])
+                    results.append(
+                        [
+                            SPACE,
+                            CODS_TYPES[SPACE],
+                            " ",
+                            f"строка {line_num}, {start}-{i}",
+                        ]
+                    )
                     continue
 
-                # Одиночные символы (; { })
                 if char in SYMBOLS:
                     code = SYMBOLS[char]
-                    results.append([
-                        code,
-                        CODS_TYPES[code],
-                        char,
-                        f"строка {line_num}, {start}-{start}"
-                    ])
+                    results.append(
+                        [
+                            code,
+                            CODS_TYPES[code],
+                            char,
+                            f"строка {line_num}, {start}-{start}",
+                        ]
+                    )
                     i += 1
                     continue
 
-                # Слова и идентификаторы
-                if char.isalpha():
-                    word = ''
-                    while i < length and (line[i].isalnum() or line[i] == '_'):
+                if char.isdigit():
+                    word = ""
+                    while i < length and line[i].isdigit():
                         word += line[i]
                         i += 1
-
-                    if word in KEYWORDS:
-                        code = KEYWORDS[word]
-                    else:
-                        code = 3
-
-                    results.append([
-                        code,
-                        CODS_TYPES[code],
-                        word,
-                        f"строка {line_num}, {start}-{i}"
-                    ])
-                    continue
-
-                # Подчеркивание
-                if char == '_':
-                    underscores = ''
-                    while i < length and line[i] == '_':
-                        underscores += line[i]
-                        i += 1
-
-                    if i < length and (line[i].isalnum()):
-                        word = underscores
-                        while i < length and (line[i].isalnum() or
-                                              line[i] == '_'):
-                            word += line[i]
-                            i += 1
-                        results.append([
-                            3,  # ident
-                            CODS_TYPES[3],
+                    results.append(
+                        [
+                            NUM,
+                            CODS_TYPES[NUM],
                             word,
-                            f"строка {line_num}, {start}-{i}"
-                        ])
-                    else:
-                        # Ошибка: только подчеркивания
-                        results.append([
-                            'ERROR',
-                            'invalid symbol (only underscores)',
-                            underscores,
-                            f"строка {line_num}, {start}-{i}"
-                        ])
+                            f"строка {line_num}, {start}-{i}",
+                        ]
+                    )
                     continue
 
-                # Собираем все подряд идущие недопустимые символы
-                invalid_chars = ''
+                if char.isalpha():
+                    word = ""
+                    while i < length and (line[i].isalnum() or line[i] == "_"):
+                        word += line[i]
+                        i += 1
+                    results.append(
+                        [
+                            ID,
+                            CODS_TYPES[ID],
+                            word,
+                            f"строка {line_num}, {start}-{i}",
+                        ]
+                    )
+                    continue
+
+                invalid_chars = ""
                 while i < length:
                     current_char = line[i]
-
-                    # Проверяем, является ли текущий символ допустимым
-                    is_valid = (
-                        current_char in [' ', '\t'] or
-                        current_char in SYMBOLS or
-                        current_char.isalpha() or
-                        current_char == '_'
-                    )
-
+                    is_valid = current_char in [" ", "\t", "\r"] or (
+                        current_char in SYMBOLS
+                    ) or current_char.isdigit() or current_char.isalpha()
                     if is_valid:
                         break
                     invalid_chars += current_char
                     i += 1
 
-                # Если собрали недопустимые символы - добавляем одну ошибку
                 if invalid_chars:
                     end_pos = start + len(invalid_chars) - 1
-                    results.append([
-                        'ERROR',
-                        'invalid symbol',
-                        invalid_chars,  # вся группа недопустимых символов
-                        f"строка {line_num}, {start}-{end_pos}"
-                    ])
-
-                # Продолжаем цикл (i уже увеличили в while)
+                    results.append(
+                        [
+                            "ERROR",
+                            msg,
+                            invalid_chars,
+                            f"строка {line_num}, {start}-{end_pos}",
+                        ]
+                    )
 
         return results
